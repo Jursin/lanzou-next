@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -16,11 +16,21 @@ export const useAppStore = defineStore('app', () => {
   let loginListenerReady = false
   let unlistenLoginSuccess: UnlistenFn | null = null
 
+  const mql = window.matchMedia('(prefers-color-scheme: dark)')
+  const systemDark = ref(mql.matches)
+  mql.addEventListener('change', (e) => {
+    systemDark.value = e.matches
+  })
+
   const isDark = computed(() => {
     if (themeSource.value === 'auto') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
+      return systemDark.value
     }
     return themeSource.value === 'dark'
+  })
+
+  watch(isDark, () => {
+    applyTheme()
   })
 
   function applyTheme() {
