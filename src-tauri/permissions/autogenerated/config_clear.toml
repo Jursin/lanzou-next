@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-config-clear"
+description = "Enables the config_clear command without any pre-configured scope."
+commands.allow = ["config_clear"]
+
+[[permission]]
+identifier = "deny-config-clear"
+description = "Denies the config_clear command without any pre-configured scope."
+commands.deny = ["config_clear"]

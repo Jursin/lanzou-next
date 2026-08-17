@@ -1,0 +1,126 @@
+/* Light theme */
+:root {
+  --m3-surface: #fbf8ff;
+  --m3-surface-dim: #dad5e0;
+  --m3-surface-container-lowest: #ffffff;
+  --m3-surface-container-low: #f4eff8;
+  --m3-surface-container: #eee8f3;
+  --m3-surface-container-high: #e8e2ed;
+  --m3-surface-container-highest: #e2dce7;
+
+  --m3-on-surface: #1a1b1f;
+  --m3-on-surface-variant: #44474d;
+
+  --m3-outline: #75777d;
+  --m3-outline-variant: #c4c6cc;
+
+  --m3-primary: #315fca;
+  --m3-on-primary: #ffffff;
+  --m3-primary-container: #dbe1ff;
+  --m3-on-primary-container: #00194b;
+
+  --m3-info: #00658f;
+  --m3-on-info: #ffffff;
+  --m3-info-container: #c7e7ff;
+  --m3-on-info-container: #001e2e;
+
+  --m3-error: #ba1a1a;
+  --m3-on-error: #ffffff;
+  --m3-error-container: #ffdad6;
+  --m3-on-error-container: #410002;
+
+  --m3-success: #456d00;
+  --m3-on-success: #ffffff;
+  --m3-success-container: #baf572;
+  --m3-on-success-container: #122000;
+
+  --m3-tertiary: #705c2e;
+  --m3-on-tertiary: #ffffff;
+  --m3-tertiary-container: #fce0a4;
+  --m3-on-tertiary-container: #251a00;
+
+  --m3-warning: #f0a020;
+  --m3-on-warning: #ffffff;
+  --m3-warning-container: #ffecb3;
+  --m3-on-warning-container: #433800;
+
+  --m3-inverse-surface: #303135;
+  --m3-on-inverse-surface: #f2f0f4;
+
+  --m3-scrollbar-thumb: color-mix(in srgb, var(--m3-on-surface) 24%, transparent);
+  --m3-shadow: rgba(0, 0, 0, 0.15);
+
+  --subnav-bg: var(--m3-surface-container-highest);
+  --subnav-title: var(--m3-on-surface);
+  --subnav-text: var(--m3-on-surface-variant);
+  --subnav-active-text: var(--m3-on-surface);
+  --subnav-active-bg: color-mix(in srgb, var(--m3-primary) 12%, transparent);
+
+  --main-bg: var(--m3-surface-container-low);
+  --panel-title: var(--m3-on-surface);
+  --panel-border: var(--m3-outline-variant);
+
+  --task-item-bg: var(--m3-surface-container-lowest);
+
+  --subnav-width: 210px;
+  --header-top-offset: 48px;
+
+  --font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* Dark theme */
+[data-theme='dark'] {
+  --m3-surface: #121318;
+  --m3-surface-dim: #121318;
+  --m3-surface-container-lowest: #0d0e13;
+  --m3-surface-container-low: #1a1b21;
+  --m3-surface-container: #1e1f25;
+  --m3-surface-container-high: #282a30;
+  --m3-surface-container-highest: #33343b;
+
+  --m3-on-surface: #e4e1e9;
+  --m3-on-surface-variant: #c6c6d0;
+
+  --m3-outline: #8f9099;
+  --m3-outline-variant: #44464f;
+
+  --m3-primary: #a8c7ff;
+  --m3-on-primary: #002f68;
+  --m3-primary-container: #14489b;
+  --m3-on-primary-container: #dbe1ff;
+
+  --m3-info: #7fd1ff;
+  --m3-on-info: #00344d;
+  --m3-info-container: #004d70;
+  --m3-on-info-container: #c7e7ff;
+
+  --m3-error: #ffb4ab;
+  --m3-on-error: #690005;
+  --m3-error-container: #93000a;
+  --m3-on-error-container: #ffdad6;
+
+  --m3-success: #a0d955;
+  --m3-on-success: #1e3500;
+  --m3-success-container: #345300;
+  --m3-on-success-container: #baf572;
+
+  --m3-tertiary: #dfc17f;
+  --m3-on-tertiary: #3c2e00;
+  --m3-tertiary-container: #554414;
+  --m3-on-tertiary-container: #fce0a4;
+
+  --m3-warning: #f0a020;
+  --m3-on-warning: #4d2f00;
+  --m3-warning-container: #5c4200;
+  --m3-on-warning-container: #ffd54f;
+
+  --m3-inverse-surface: #e4e1e9;
+  --m3-on-inverse-surface: #303135;
+
+  --subnav-bg: var(--m3-surface-container-lowest);
+  --main-bg: var(--m3-surface-container-high);
+  --task-item-bg: var(--m3-surface-container);
+}

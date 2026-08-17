@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-ls"
+description = "Enables the lanzou_ls command without any pre-configured scope."
+commands.allow = ["lanzou_ls"]
+
+[[permission]]
+identifier = "deny-lanzou-ls"
+description = "Denies the lanzou_ls command without any pre-configured scope."
+commands.deny = ["lanzou_ls"]

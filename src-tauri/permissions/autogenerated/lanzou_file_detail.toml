@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-file-detail"
+description = "Enables the lanzou_file_detail command without any pre-configured scope."
+commands.allow = ["lanzou_file_detail"]
+
+[[permission]]
+identifier = "deny-lanzou-file-detail"
+description = "Denies the lanzou_file_detail command without any pre-configured scope."
+commands.deny = ["lanzou_file_detail"]

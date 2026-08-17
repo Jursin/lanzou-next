@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-rm-folder"
+description = "Enables the lanzou_rm_folder command without any pre-configured scope."
+commands.allow = ["lanzou_rm_folder"]
+
+[[permission]]
+identifier = "deny-lanzou-rm-folder"
+description = "Denies the lanzou_rm_folder command without any pre-configured scope."
+commands.deny = ["lanzou_rm_folder"]

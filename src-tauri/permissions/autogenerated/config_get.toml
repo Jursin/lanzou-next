@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-config-get"
+description = "Enables the config_get command without any pre-configured scope."
+commands.allow = ["config_get"]
+
+[[permission]]
+identifier = "deny-config-get"
+description = "Denies the config_get command without any pre-configured scope."
+commands.deny = ["config_get"]

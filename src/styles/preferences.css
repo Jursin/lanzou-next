@@ -1,0 +1,92 @@
+.preference-form-wrapper {
+  height: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preference-form-scroll {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.form-preference {
+  min-height: 100%;
+  overflow: visible;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  flex: none;
+  padding: 16px 30px 64px 36px;
+}
+
+.form-preference .n-form-item {
+  padding-left: 50px;
+}
+
+.form-preference .n-divider.n-divider--title-position-left .n-divider__line--left {
+  width: 28px;
+  flex: 0 0 28px;
+}
+
+.form-preference .n-divider.n-divider--title-position-left .n-divider__line--right {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pref-control-auto {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-width: 160px;
+  max-width: 100%;
+}
+
+.pref-control-full {
+  width: 100%;
+  min-width: 0;
+}
+
+.form-preference .pref-login-input {
+  width: 360px;
+}
+
+/* 日志级别下拉 */
+.pref-control-log-level {
+  min-width: 100px;
+}
+
+.pref-icon-button {
+  padding: 0 10px;
+}
+
+/* 路径类输入组 */
+.pref-path-group {
+  width: 360px;
+}
+
+.pref-number {
+  width: 100px;
+}
+
+.pref-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 34px;
+  min-width: 0;
+}
+
+.pref-inline-row__meta {
+  color: var(--m3-on-surface-variant);
+  font-size: 13px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.pref-inline-row__meta--muted {
+  color: var(--m3-outline);
+}

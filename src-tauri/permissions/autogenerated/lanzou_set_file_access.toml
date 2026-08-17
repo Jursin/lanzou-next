@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-set-file-access"
+description = "Enables the lanzou_set_file_access command without any pre-configured scope."
+commands.allow = ["lanzou_set_file_access"]
+
+[[permission]]
+identifier = "deny-lanzou-set-file-access"
+description = "Denies the lanzou_set_file_access command without any pre-configured scope."
+commands.deny = ["lanzou_set_file_access"]

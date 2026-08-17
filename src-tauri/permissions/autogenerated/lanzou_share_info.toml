@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-share-info"
+description = "Enables the lanzou_share_info command without any pre-configured scope."
+commands.allow = ["lanzou_share_info"]
+
+[[permission]]
+identifier = "deny-lanzou-share-info"
+description = "Denies the lanzou_share_info command without any pre-configured scope."
+commands.deny = ["lanzou_share_info"]

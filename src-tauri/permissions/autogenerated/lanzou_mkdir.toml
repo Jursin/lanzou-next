@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-mkdir"
+description = "Enables the lanzou_mkdir command without any pre-configured scope."
+commands.allow = ["lanzou_mkdir"]
+
+[[permission]]
+identifier = "deny-lanzou-mkdir"
+description = "Denies the lanzou_mkdir command without any pre-configured scope."
+commands.deny = ["lanzou_mkdir"]

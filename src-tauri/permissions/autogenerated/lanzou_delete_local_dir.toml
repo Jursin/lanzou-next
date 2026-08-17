@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-delete-local-dir"
+description = "Enables the lanzou_delete_local_dir command without any pre-configured scope."
+commands.allow = ["lanzou_delete_local_dir"]
+
+[[permission]]
+identifier = "deny-lanzou-delete-local-dir"
+description = "Denies the lanzou_delete_local_dir command without any pre-configured scope."
+commands.deny = ["lanzou_delete_local_dir"]

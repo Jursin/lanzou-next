@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-upload-precheck"
+description = "Enables the lanzou_upload_precheck command without any pre-configured scope."
+commands.allow = ["lanzou_upload_precheck"]
+
+[[permission]]
+identifier = "deny-lanzou-upload-precheck"
+description = "Denies the lanzou_upload_precheck command without any pre-configured scope."
+commands.deny = ["lanzou_upload_precheck"]

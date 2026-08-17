@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-rename-folder"
+description = "Enables the lanzou_rename_folder command without any pre-configured scope."
+commands.allow = ["lanzou_rename_folder"]
+
+[[permission]]
+identifier = "deny-lanzou-rename-folder"
+description = "Denies the lanzou_rename_folder command without any pre-configured scope."
+commands.deny = ["lanzou_rename_folder"]

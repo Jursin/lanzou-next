@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-merge-download"
+description = "Enables the lanzou_merge_download command without any pre-configured scope."
+commands.allow = ["lanzou_merge_download"]
+
+[[permission]]
+identifier = "deny-lanzou-merge-download"
+description = "Denies the lanzou_merge_download command without any pre-configured scope."
+commands.deny = ["lanzou_merge_download"]

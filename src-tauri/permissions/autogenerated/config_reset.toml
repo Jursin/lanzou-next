@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-config-reset"
+description = "Enables the config_reset command without any pre-configured scope."
+commands.allow = ["config_reset"]
+
+[[permission]]
+identifier = "deny-config-reset"
+description = "Denies the config_reset command without any pre-configured scope."
+commands.deny = ["config_reset"]

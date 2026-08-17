@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-recycle-list"
+description = "Enables the lanzou_recycle_list command without any pre-configured scope."
+commands.allow = ["lanzou_recycle_list"]
+
+[[permission]]
+identifier = "deny-lanzou-recycle-list"
+description = "Denies the lanzou_recycle_list command without any pre-configured scope."
+commands.deny = ["lanzou_recycle_list"]

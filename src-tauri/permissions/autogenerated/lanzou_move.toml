@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-lanzou-move"
+description = "Enables the lanzou_move command without any pre-configured scope."
+commands.allow = ["lanzou_move"]
+
+[[permission]]
+identifier = "deny-lanzou-move"
+description = "Denies the lanzou_move command without any pre-configured scope."
+commands.deny = ["lanzou_move"]
