@@ -26,6 +26,7 @@
     "allow-log-get-file",
     "allow-log-clear",
     "allow-check-for-update",
+    "allow-cancel-download",
     "allow-download-and-install",
     "allow-lanzou-ls",
     "allow-lanzou-profile",

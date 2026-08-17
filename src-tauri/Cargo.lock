@@ -2085,7 +2085,7 @@ dependencies = [
 
 [[package]]
 name = "lanzou-next"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "dirs",
@@ -2108,6 +2108,7 @@ dependencies = [
  "thiserror 2.0.20",
  "tokio",
  "url",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

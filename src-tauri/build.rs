@@ -8,6 +8,7 @@ fn main() {
             "log_get_file",
             "log_clear",
             "check_for_update",
+            "cancel_download",
             "download_and_install",
             "lanzou_ls",
             "lanzou_profile",

@@ -9,6 +9,8 @@ pub struct AppState {
     pub client: Mutex<LanzouClient>,
     /// 传输任务取消标志表（task_id -> 取消标志）
     pub cancels: Mutex<HashMap<String, Arc<std::sync::atomic::AtomicBool>>>,
+    /// 更新下载取消标志
+    pub update_cancel: Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl Default for AppState {
@@ -16,6 +18,7 @@ impl Default for AppState {
         Self {
             client: Mutex::new(LanzouClient::new()),
             cancels: Mutex::new(HashMap::new()),
+            update_cancel: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
     }
 }

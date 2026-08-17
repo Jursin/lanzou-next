@@ -1,18 +1,36 @@
 # lanzou-next
 
-一个使用 **Tauri 2 + Vue 3 + TypeScript** 构建的蓝奏云第三方桌面客户端。
+![](https://img.shields.io/badge/Tauri_2-grey?logo=tauri)
+![](https://img.shields.io/badge/Rust-grey?logo=rust)
+![](https://img.shields.io/badge/Vue_3-grey?logo=vuedotjs)
+![](https://img.shields.io/badge/TypeScript-grey?logo=typescript)
+![](https://img.shields.io/github/v/release/Jursin/lanzou-next?include_prereleases&logo=github)
+![](https://img.shields.io/github/license/Jursin/lanzou-next?logo=github)
+[![](https://img.shields.io/badge/爱发电-grey?logo=afdian)](https://afdian.com/a/jursin)
+
+一个轻量、快速的蓝奏云第三方客户端。
 
 ## 功能特性
 
-- **文件管理**：浏览、搜索、排序、重命名、移动、删除、新建文件夹
+- **文件管理**：浏览、搜索、排序、重命名、移动、删除文件/文件夹
+- **上传**：大文件自动分片上传、文件夹递归上传、上传预检
 - **下载**：多线程断点续传、分片合并下载、自定义下载目录
-- **上传**：大文件自动分片上传、文件夹递归上传、上传预检（超限文件提示）
 - **分享解析**：解析分享链接、提取码自动填充
 - **回收站**：查看、恢复、彻底删除
+- **个性化**：预设配色方案、浅色/深色主题
 - **账号管理**：账号密码登录、Cookie 自动持久化
-- **更新检查**：启动时自动检查、手动检查、测试版/稳定版切换
-- **个性化**：预设配色方案、浅色/深色主题、轻量模式（关闭即销毁窗口释放内存）、系统托盘
-- **日志查看**：应用日志实时查看、清理
+- **更新检查**：启动时自动检查、手动检查、接收测试版更新
+- **日志查看**：实时记录日志、可选日志级别、一键清理
+
+## 配置说明
+
+配置文件位置（由 `tauri-plugin-store` 管理）：
+
+| 平台 | 路径 |
+|------|------|
+| Windows | `%APPDATA%\com.lanzou.next\config.json` |
+| Linux | `~/.config/com.lanzou.next/config.json` |
+| macOS | `~/Library/Application Support/com.lanzou.next/config.json` |
 
 ## 环境要求
 
@@ -110,30 +128,20 @@ lanzou-next/
 └── README.md
 ```
 
-## 配置说明
-
-配置文件位置（由 `tauri-plugin-store` 管理）：
-
-| 平台 | 路径 |
-|------|------|
-| Windows | `%APPDATA%\com.lanzou.next\config.json` |
-| Linux | `~/.config/com.lanzou.next/config.json` |
-| macOS | `~/Library/Application Support/com.lanzou.next/config.json` |
-
 ## 开发指南
 
 ### 代码规范
 
 ```bash
 # 格式化
-pnpm format          # Prettier (前端)
-cd src-tauri && cargo fmt  # rustfmt (后端)
+pnpm format                   # Prettier (前端)
+cd src-tauri && cargo fmt     # rustfmt (后端)
 
 # 类型检查
-pnpm build           # vue-tsc --noEmit + vite build
+pnpm build                    # vue-tsc --noEmit + vite build
 
 # Lint
-pnpm lint            # ESLint (前端)
+pnpm lint                     # ESLint (前端)
 cd src-tauri && cargo clippy  # Clippy (后端)
 ```
 
@@ -149,6 +157,4 @@ cd src-tauri && cargo clippy  # Clippy (后端)
 - UI 组件库 [Naive UI](https://www.naiveui.com/)
 - 桌面框架 [Tauri](https://tauri.app/)
 
----
-
-> **免责声明**：本项目仅供个人学习研究使用，不提供任何商业用途支持。使用本客户端产生的任何后果由使用者自行承担。请遵守蓝奏云服务条款及当地法律法规。
+> **免责声明**：本项目仅供个人学习研究使用，免费开源。在使用本软件之前，你应了解并承担相应的风险，使用本软件产生的任何后果与本项目无关。请遵守蓝奏云服务条款及相关法律法规。

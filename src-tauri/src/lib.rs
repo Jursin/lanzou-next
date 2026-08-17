@@ -17,7 +17,7 @@ use commands::ops::{
     lanzou_rename_folder, lanzou_rm_file, lanzou_rm_folder, lanzou_set_file_access,
     lanzou_set_file_description, lanzou_set_folder_access,
 };
-use commands::update::{check_for_update, download_and_install};
+use commands::update::{cancel_download, check_for_update, download_and_install};
 use lanzou::core::download::{lanzou_cancel_transfer, lanzou_download, lanzou_download_by_id};
 use lanzou::core::files::{lanzou_check_path, lanzou_delete_local, lanzou_delete_local_dir};
 use lanzou::core::upload::lanzou_upload;
@@ -34,14 +34,16 @@ fn show_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
         let _ = win.unminimize();
         let _ = win.set_focus();
     } else {
-        let _ = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+        let win = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
             .title("蓝奏云盘")
             .inner_size(1200.0, 800.0)
             .min_inner_size(960.0, 640.0)
             .resizable(true)
             .decorations(false)
             .center()
-            .build();
+            .build()
+            .expect("创建主窗口失败");
+        let _ = win.set_focus();
     }
 }
 
@@ -219,7 +221,8 @@ pub fn run() {
             lanzou_set_file_description,
             lanzou_file_detail,
             lanzou_folder_detail,
-check_for_update,
+            check_for_update,
+            cancel_download,
             download_and_install,
         ])
         .build(tauri::generate_context!())

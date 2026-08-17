@@ -106,4 +106,5 @@ export const lanzouLogout = () => call<void>('lanzou_logout')
 
 // 更新
 export const checkForUpdate = (beta?: boolean) => call<UpdateInfo | null>('check_for_update', { beta })
+export const cancelDownload = () => call<void>('cancel_download')
 export const downloadAndInstall = (info: UpdateInfo) => call<void>('download_and_install', { info })
