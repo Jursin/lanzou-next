@@ -252,7 +252,7 @@ jobs:
           # 追加下载链接模板
           version="${GITHUB_REF_NAME#v}"
           prev_version=$(grep -m2 '^## [0-9]' CHANGELOG.md | tail -1 | sed 's/^## //')
-          template=$(sed -e "s|VERSION|${version}|g" -e "s|PREV_VERSION|${prev_version}|g" .github/release_template.md)
+          template=$(sed -e "s|PREV_VERSION|${prev_version}|g" -e "s|VERSION|${version}|g" .github/release_template.md)
           body="${body}"$'\n\n'"${template}"
           {
             echo "BODY<<EOF"
