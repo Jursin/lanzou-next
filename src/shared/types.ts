@@ -208,6 +208,8 @@ export interface AppConfig {
   betaUpdate?: boolean
   /** 上次检查更新时间（Unix 毫秒时间戳） */
   lastCheckUpdateTime?: number
+  /** GitHub 加速地址，留空则直连 */
+  githubProxyUrl?: string
 }
 
 /** 更新检查结果 */

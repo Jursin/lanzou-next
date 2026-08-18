@@ -20,7 +20,7 @@
 - **回收站**：查看、恢复、彻底删除
 - **个性化**：预设配色方案、浅色/深色主题
 - **账号管理**：账号密码登录、Cookie 自动持久化
-- **更新检查**：启动时自动检查、手动检查、接收测试版更新
+- **更新检查**：启动时自动检查、手动检查、接收测试版更新、更新后自动安装并重启
 - **日志查看**：实时记录日志、可选日志级别、一键清理
 
 ## ⚙️ 配置说明
@@ -106,9 +106,9 @@ lanzou-next/
 │   │   │   ├── config.rs   # 配置管理
 │   │   │   ├── lanzou.rs   # 文件/分享/目录操作
 │   │   │   ├── login.rs    # 登录/登出
+│   │   │   ├── log.rs      # 日志
 │   │   │   ├── ops.rs      # 重命名/移动/权限/回收站
-│   │   │   ├── update.rs   # 更新检查
-│   │   │   └── log.rs      # 日志
+│   │   │   └── update.rs   # 更新检查与安装
 │   │   ├── lanzou/
 │   │   │   ├── client.rs   # HTTP 客户端（Cookie/UA/反爬）
 │   │   │   ├── core/       # 核心业务
@@ -125,10 +125,13 @@ lanzou-next/
 │   │   ├── error.rs
 │   │   ├── state.rs
 │   │   ├── log_policy.rs
+│   │   ├── main.rs
 │   │   └── lib.rs
 │   ├── build.rs            # Tauri 命令清单生成
 │   ├── tauri.conf.json     # Tauri 配置
 │   └── Cargo.toml
+├── pkg/                    # Arch Linux 打包
+│   └── PKGBUILD
 ├── scripts/
 │   └── fix-linuxdeploy.sh  # 修复脚本
 ├── package.json

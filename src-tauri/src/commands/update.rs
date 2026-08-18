@@ -1,10 +1,30 @@
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
+use tauri_plugin_store::StoreExt;
 
 use crate::error::AppError;
 use crate::state::AppState;
 
 pub const UPDATE_API_URL: &str = "https://api.github.com/repos/Jursin/lanzou-next/releases";
+
+/// 如果配置了 GitHub 加速地址，将加速地址拼接到下载 URL 前面
+fn apply_github_proxy<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    url: &str,
+) -> Result<String, AppError> {
+    let store = app
+        .store(crate::commands::config::CONFIG_STORE_FILE)
+        .map_err(|e| AppError::Update(e.to_string()))?;
+    let proxy = store
+        .get("github_proxy_url")
+        .and_then(|v| v.as_str().map(String::from))
+        .unwrap_or_default();
+    if proxy.is_empty() || !url.starts_with("https://github.com") {
+        return Ok(url.to_string());
+    }
+    let proxy = proxy.trim_end_matches('/');
+    Ok(format!("{proxy}/{url}"))
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,14 +55,16 @@ pub async fn cancel_download(state: State<'_, AppState>) -> Result<(), AppError>
 
 #[tauri::command]
 pub async fn check_for_update(
+    app: AppHandle,
     _state: State<'_, AppState>,
     beta: Option<bool>,
 ) -> Result<Option<UpdateInfo>, AppError> {
-    let url = if beta.unwrap_or(false) {
+    let api_url = if beta.unwrap_or(false) {
         format!("{UPDATE_API_URL}?per_page=20")
     } else {
         format!("{UPDATE_API_URL}/latest")
     };
+    let url = apply_github_proxy(&app, &api_url)?;
     let http = reqwest::Client::builder()
         .user_agent(crate::lanzou::client::DEFAULT_USER_AGENT)
         .build()
@@ -79,6 +101,7 @@ pub async fn download_and_install(
     let asset_url = info
         .asset_url
         .ok_or_else(|| AppError::Update("无可用安装包".into()))?;
+    let asset_url = apply_github_proxy(&app, &asset_url)?;
 
     let http = reqwest::Client::builder()
         .user_agent(crate::lanzou::client::DEFAULT_USER_AGENT)

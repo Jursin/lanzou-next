@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, type Component } from 'vue'
+import { computed, h, onMounted, ref, watch, type Component } from 'vue'
 
 import {
   NForm,
@@ -33,6 +33,7 @@ import {
   LogOutOutline,
   RefreshOutline,
   RocketOutline,
+  AlertCircleOutline,
   TrashOutline,
 } from '@vicons/ionicons5'
 import ViewHeader from '@/components/layout/ViewHeader.vue'
@@ -380,6 +381,26 @@ function onLogout() {
   })
 }
 
+function showDisclaimer() {
+  const lines = [
+    '本项目仅供个人学习和技术研究使用。',
+    '• 使用限制：禁止将本项目用于任何违法行为，请遵守蓝奏云服务条款及相关法律法规。',
+    '• 责任声明：你应了解相应的风险，因使用本项目产生的任何法律纠纷或损失，均由使用者自行承担。',
+    '• 争议处理：如权利方认为本项目侵犯其权益，请通过 Issues 联系，我们将积极配合处理。',
+  ]
+  dialog.info({
+    title: '免责声明',
+    content: () =>
+      h(
+        'div',
+        { style: 'white-space: pre-wrap; line-height: 1.8' },
+        lines.join('\n'),
+      ),
+    positiveText: '我知道了',
+    transformOrigin: 'center',
+  })
+}
+
 /** 恢复默认设置：重置全部配置为默认值，保留登录状态（接口地址/域名/UA/cookies） */
 function onRestoreDefaults() {
   dialog.error({
@@ -701,6 +722,14 @@ function onRestoreDefaults() {
                 @update:value="(v) => onConfigChange({ betaUpdate: v })"
               />
             </NFormItem>
+            <NFormItem label="GitHub 加速地址">
+              <NInput
+                :value="preferenceStore.config.githubProxyUrl ?? ''"
+                placeholder="留空则直连 GitHub"
+                style="width: 360px"
+                @update:value="(v) => onConfigChange({ githubProxyUrl: v || undefined })"
+              />
+            </NFormItem>
             <NFormItem label="上次检查时间">
               <div class="pref-inline-row">
                 <NButton size="small" @click="manualCheck">
@@ -726,6 +755,14 @@ function onRestoreDefaults() {
                   {{ link.label }}
                 </NButton>
               </div>
+            </NFormItem>
+            <NFormItem label="免责声明">
+              <NButton size="small" @click="showDisclaimer">
+                <template #icon>
+                  <NIcon :size="14"><AlertCircleOutline /></NIcon>
+                </template>
+                点击查看
+              </NButton>
             </NFormItem>
           </NForm>
         </div>

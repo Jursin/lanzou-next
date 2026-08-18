@@ -58,6 +58,8 @@ pub struct AppConfig {
     pub beta_update: Option<bool>,
     /// 上次检查更新时间（Unix 毫秒时间戳）
     pub last_check_update_time: Option<u64>,
+    /// GitHub 加速地址，留空则直连
+    pub github_proxy_url: Option<String>,
 }
 
 fn store<R: Runtime>(
@@ -101,6 +103,7 @@ pub fn config_get(app: AppHandle) -> Result<AppConfig, AppError> {
         auto_check_update: get("auto_check_update").and_then(|v| v.as_bool()),
         beta_update: get("beta_update").and_then(|v| v.as_bool()),
         last_check_update_time: get("last_check_update_time").and_then(|v| v.as_u64()),
+        github_proxy_url: get("github_proxy_url").and_then(|v| v.as_str().map(String::from)),
     })
 }
 
@@ -179,6 +182,9 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
     if let Some(v) = cfg.last_check_update_time {
         store.set("last_check_update_time", serde_json::json!(v));
     }
+    if let Some(v) = cfg.github_proxy_url {
+        store.set("github_proxy_url", serde_json::json!(v));
+    }
     store.save().map_err(|e| AppError::Config(e.to_string()))?;
     Ok(())
 }
@@ -223,6 +229,7 @@ fn write_defaults<R: Runtime>(
         auto_check_update: Some(true),
         beta_update: Some(false),
         last_check_update_time: None,
+        github_proxy_url: None,
     };
     store.set("download_dir", serde_json::json!(download_dir));
     store.set("set_default_download_dir", serde_json::json!(false));
