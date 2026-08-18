@@ -4,13 +4,14 @@
 ![](https://img.shields.io/badge/Rust-grey?logo=rust)
 ![](https://img.shields.io/badge/Vue_3-grey?logo=vuedotjs)
 ![](https://img.shields.io/badge/TypeScript-grey?logo=typescript)
-![](https://img.shields.io/github/v/release/Jursin/lanzou-next?include_prereleases&logo=github)
+![](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
 ![](https://img.shields.io/github/license/Jursin/lanzou-next?logo=github)
+![](https://img.shields.io/github/v/release/Jursin/lanzou-next?include_prereleases&logo=github)
 [![](https://img.shields.io/badge/爱发电-grey?logo=afdian)](https://afdian.com/a/jursin)
 
 一个轻量、快速的蓝奏云第三方客户端。
 
-## 功能特性
+## ✨ 功能特性
 
 - **文件管理**：浏览、搜索、排序、重命名、移动、删除文件/文件夹
 - **上传**：大文件自动分片上传、文件夹递归上传、上传预检
@@ -22,7 +23,7 @@
 - **更新检查**：启动时自动检查、手动检查、接收测试版更新
 - **日志查看**：实时记录日志、可选日志级别、一键清理
 
-## 配置说明
+## ⚙️ 配置说明
 
 配置文件位置（由 `tauri-plugin-store` 管理）：
 
@@ -32,13 +33,13 @@
 | Linux | `~/.config/com.lanzou.next/config.json` |
 | macOS | `~/Library/Application Support/com.lanzou.next/config.json` |
 
-## 环境要求
+## 📋 环境要求
 
 - **Node.js**
 - **pnpm**
 - **Rust**
 
-## 快速开始
+## 🚀 快速开始
 
 ```bash
 # 克隆仓库
@@ -55,7 +56,7 @@ pnpm tauri dev
 pnpm dev
 ```
 
-## 构建发布包
+## 📦 构建发布包
 
 ```bash
 # 前端类型检查 + 构建
@@ -80,7 +81,7 @@ pnpm tauri build --bundles dmg
 > [!warning]
 > Arch linuxdeploy 内置的 strip 版本太旧，不认识新 glibc 的 .relr.dyn 格式，需运行 `scripts/fix-linuxdeploy.sh` 修复缓存
 
-## 项目结构
+## 📁 项目结构
 
 ```
 lanzou-next/
@@ -131,7 +132,7 @@ lanzou-next/
 └── README.md
 ```
 
-## 开发指南
+## 🛠️ 开发指南
 
 ### 代码规范
 
@@ -148,11 +149,11 @@ pnpm lint                     # ESLint (前端)
 cd src-tauri && cargo clippy  # Clippy (后端)
 ```
 
-## 许可证
+## 📜 许可证
 
 [MIT License](LICENSE)
 
-## 致谢
+## 🙏 致谢
 
 - 后端核心逻辑移植自 [chenhb23/lanzouyun-disk](https://github.com/chenhb23/lanzouyun-disk)
 - 前端界面参考 [AnInsomniacy/motrix-next](https://github.com/AnInsomniacy/motrix-next)
@@ -160,4 +161,8 @@ cd src-tauri && cargo clippy  # Clippy (后端)
 - UI 组件库 [Naive UI](https://www.naiveui.com/)
 - 桌面框架 [Tauri](https://tauri.app/)
 
-> **免责声明**：本项目仅供个人学习研究使用，免费开源。在使用本软件之前，你应了解并承担相应的风险，使用本软件产生的任何后果与本项目无关。请遵守蓝奏云服务条款及相关法律法规。
+## 📄 免责声明
+本项目仅供个人学习和技术研究使用。
+- **使用限制**：禁止将本项目用于任何违法行为，请遵守蓝奏云服务条款及相关法律法规。
+- **责任声明**：你应了解相应的风险，因使用本项目产生的任何法律纠纷或损失，均由使用者自行承担。
+- **争议处理**：如版权方认为本项目侵犯其权益，请通过 Issues 联系，我们将积极配合处理。
