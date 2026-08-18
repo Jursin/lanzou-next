@@ -13,6 +13,7 @@ jobs:
   windows:
     name: Windows ${{ matrix.arch }}
     runs-on: windows-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -44,11 +45,13 @@ jobs:
           name: Windows-${{ matrix.arch }}
           path: src-tauri/target/**/bundle/nsis/*.exe
           if-no-files-found: error
+          retention-days: 7
           include-hidden-files: true
 
   linux:
     name: Linux ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -81,10 +84,12 @@ jobs:
             src-tauri/target/release/bundle/deb/*.deb
             src-tauri/target/release/bundle/rpm/*.rpm
           if-no-files-found: error
+          retention-days: 7
 
   arch:
     name: Arch Linux x64
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     container:
       image: archlinux:latest
       options: --user root
@@ -173,10 +178,12 @@ jobs:
           name: Arch-x64
           path: "*.pkg.tar.zst"
           if-no-files-found: error
+          retention-days: 7
 
   macos:
     name: macOS ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -208,6 +215,7 @@ jobs:
           name: macOS-${{ matrix.arch }}
           path: src-tauri/target/**/bundle/dmg/*.dmg
           if-no-files-found: error
+          retention-days: 7
           include-hidden-files: true
 
   release:
@@ -215,6 +223,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [windows, linux, arch, macos]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -259,4 +268,5 @@ jobs:
           body: ${{ steps.changelog.outputs.BODY }}
           draft: false
           prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
+          overwrite_files: true
           fail_on_unmatched_files: false
