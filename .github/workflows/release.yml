@@ -12,28 +12,24 @@ concurrency:
 jobs:
   windows:
     name: Windows ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - arch: x64
-            os: windows-latest
             rust_target: ""
           - arch: arm64
-            os: windows-latest
             rust_target: aarch64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
-        with: { version: 11 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_target }}
+      - uses: Swatinem/rust-cache@v2
       - run: pnpm install --frozen-lockfile
       - name: Build
         shell: bash
@@ -50,60 +46,36 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
 
-  linux-x64:
-    name: Linux x64
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
+  linux:
+    name: Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-24.04
+          - arch: arm64
+            os: ubuntu-22.04-arm
     env:
       APPIMAGE_EXTRACT_AND_RUN: 1
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
-        with: { version: 11 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
-            libappindicator3-dev librsvg2-dev patchelf
+            libappindicator3-dev librsvg2-dev patchelf xdg-utils
       - run: pnpm install --frozen-lockfile
       - run: pnpm tauri build --bundles appimage deb rpm
       - uses: actions/upload-artifact@v7
         with:
-          name: Linux-x64
-          path: |
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/rpm/*.rpm
-          if-no-files-found: error
-
-  linux-arm64:
-    name: Linux arm64
-    runs-on: ubuntu-22.04-arm
-    permissions:
-      contents: write
-    env:
-      APPIMAGE_EXTRACT_AND_RUN: 1
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
-        with: { version: 11 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
-            libappindicator3-dev librsvg2-dev patchelf
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm tauri build --bundles appimage deb rpm
-      - uses: actions/upload-artifact@v7
-        with:
-          name: Linux-arm64
+          name: Linux-${{ matrix.arch }}
           path: |
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/bundle/deb/*.deb
@@ -115,26 +87,30 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
-    permissions:
-      contents: write
+      options: --user root
     steps:
       - name: Install system deps
         run: |
-          pacman -Syu --noconfirm base-devel rust nodejs npm git
+          for i in $(seq 1 10); do
+            pacman -Syu --noconfirm base-devel rust nodejs npm git \
+              gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg pkgconf && break
+            echo "pacman sync failed (attempt $i/10), retrying in 30s..."
+            sleep 30
+          done
+          pacman -Qi gtk3 >/dev/null || { echo "Failed to install system packages"; exit 1; }
           useradd -m builder
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
       - uses: actions/checkout@v7
         with:
-          path: src
+          path: _src
       - name: Setup pnpm
         run: npm install -g pnpm@11
       - name: Install and build
         run: |
-          cp -r src/* /home/builder/
-          chown -R builder:builder /home/builder
-          cd /home/builder
-          su builder -c "pnpm install --frozen-lockfile"
-          su builder -c "pnpm tauri build --no-bundle"
+          chown -R builder:builder _src
+          cd _src
+          su builder -c "HOME=/home/builder pnpm install --frozen-lockfile"
+          su builder -c "HOME=/home/builder pnpm tauri build --no-bundle"
 
       - name: Package .pkg.tar.zst
         shell: bash
@@ -146,12 +122,12 @@ jobs:
           mkdir -p "$pkgdir"/usr/share/icons/hicolor/{32x32,128x128,256x256,512x512}/apps
           mkdir -p "$pkgdir"/usr/share/licenses/lanzou-next
 
-          cp /home/builder/src-tauri/target/release/lanzou-next "$pkgdir/usr/bin/"
-          cp src/src-tauri/icons/32x32.png       "$pkgdir/usr/share/icons/hicolor/32x32/apps/lanzou-next.png"
-          cp src/src-tauri/icons/128x128.png     "$pkgdir/usr/share/icons/hicolor/128x128/apps/lanzou-next.png"
-          cp src/src-tauri/icons/128x128@2x.png  "$pkgdir/usr/share/icons/hicolor/256x256/apps/lanzou-next.png"
-          cp src/src-tauri/icons/512x512.png     "$pkgdir/usr/share/icons/hicolor/512x512/apps/lanzou-next.png"
-          cp src/LICENSE                         "$pkgdir/usr/share/licenses/lanzou-next/"
+          cp _src/src-tauri/target/release/lanzou-next "$pkgdir/usr/bin/"
+          cp _src/src-tauri/icons/32x32.png       "$pkgdir/usr/share/icons/hicolor/32x32/apps/lanzou-next.png"
+          cp _src/src-tauri/icons/128x128.png     "$pkgdir/usr/share/icons/hicolor/128x128/apps/lanzou-next.png"
+          cp _src/src-tauri/icons/128x128@2x.png  "$pkgdir/usr/share/icons/hicolor/256x256/apps/lanzou-next.png"
+          cp _src/src-tauri/icons/512x512.png     "$pkgdir/usr/share/icons/hicolor/512x512/apps/lanzou-next.png"
+          cp _src/LICENSE                         "$pkgdir/usr/share/licenses/lanzou-next/"
 
           cat > "$pkgdir/usr/share/applications/lanzou-next.desktop" <<'EOF'
           [Desktop Entry]
@@ -164,27 +140,33 @@ jobs:
           Terminal=false
           EOF
 
-          builddir=$(mktemp -d)
-          cat > "$builddir/PKGBUILD" <<EOF
-          pkgname=lanzou-next
-          pkgver=$ver
-          pkgrel=1
-          pkgdesc=蓝奏云客户端
-          arch=(x86_64)
-          url=https://github.com/${{ github.repository }}
-          license=(MIT)
-          options=(!lto !debug)
-          depends=(webkit2gtk-4.1 gtk3 libappindicator librsvg)
-          source=()
-          package() {
-            cp -r --no-preserve=ownership "$pkgdir"/* "\$pkgdir/"
-          }
+          builddate=$(date +%s)
+          size=$(du -sb "$pkgdir" | awk '{print $1}')
+
+          cat > "$pkgdir/.PKGINFO" <<EOF
+          pkgname = lanzou-next
+          pkgbase = lanzou-next
+          pkgver = $ver-1
+          pkgdesc = 蓝奏云客户端
+          url = https://github.com/${{ github.repository }}
+          builddate = $builddate
+          packager = GitHub Actions
+          size = $size
+          arch = x86_64
+          license = MIT
+          depends = webkit2gtk-4.1
+          depends = gtk3
+          depends = libappindicator
+          depends = librsvg
           EOF
 
-          cd "$builddir"
-          makepkg --noextract --nocheck --nobuild -f
-          makepkg -e --nocheck -f
-          cp *.pkg.tar.zst "$GITHUB_WORKSPACE/"
+          cd "$pkgdir"
+          bsdtar --format=bsdtar -cf "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar" \
+            --uid=0 --gid=0 --uname=root --gname=root \
+            .PKGINFO usr
+          zstd -19 -f -q "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar" \
+            -o "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar.zst"
+          rm "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -195,8 +177,6 @@ jobs:
   macos:
     name: macOS ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -204,26 +184,36 @@ jobs:
           - arch: arm64
             os: macos-14
           - arch: x64
-            os: macos-13
+            os: macos-14
+            rust_target: x86_64-apple-darwin
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v4
-        with: { version: 11 }
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target || '' }}
+      - uses: Swatinem/rust-cache@v2
       - run: pnpm install --frozen-lockfile
-      - run: pnpm tauri build --bundles dmg
+      - name: Build
+        run: |
+          if [ -n "${{ matrix.rust_target }}" ]; then
+            pnpm tauri build --bundles dmg --target ${{ matrix.rust_target }}
+          else
+            pnpm tauri build --bundles dmg
+          fi
       - uses: actions/upload-artifact@v7
         with:
           name: macOS-${{ matrix.arch }}
-          path: src-tauri/target/release/bundle/dmg/*.dmg
+          path: src-tauri/target/**/bundle/dmg/*.dmg
           if-no-files-found: error
+          include-hidden-files: true
 
   release:
     name: Publish Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [windows, linux-x64, linux-arm64, arch, macos]
+    needs: [windows, linux, arch, macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
