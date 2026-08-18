@@ -235,8 +235,38 @@ jobs:
           merge-multiple: true
       - name: List all artifacts
         run: find artifacts -type f | sort
+      - name: Extract changelog
+        id: changelog
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          body=$(awk -v ver="$tag" '
+            /^## [0-9]/ {
+              if (found) exit
+              if (index($0, "## " ver)) found=1
+              next
+            }
+            found && NF { print }
+          ' CHANGELOG.md)
+          if [ -z "$body" ]; then
+            body="详见 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)"
+          fi
+          {
+            echo "BODY<<EOF"
+            echo "$body"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Detect pre-release
+        id: prerelease
+        run: |
+          if echo "${GITHUB_REF_NAME}" | grep -qE '-'; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
+          body: ${{ steps.changelog.outputs.BODY }}
           draft: false
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
           fail_on_unmatched_files: false
