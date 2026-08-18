@@ -74,6 +74,10 @@ pnpm tauri build --bundles deb
 # Linux .rpm 包
 pnpm tauri build --bundles rpm
 
+# Linux .pkg.tar.zst 包
+pnpm tauri build --no-bundle
+cd pkg && makepkg -e --nocheck --skippgpcheck
+
 # macOS .dmg
 pnpm tauri build --bundles dmg
 ```

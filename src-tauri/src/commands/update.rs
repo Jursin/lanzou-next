@@ -134,7 +134,7 @@ pub async fn download_and_install(
         UpdateDownloadProgress { downloaded, total },
     );
 
-    // ShellExecuteW("open") + NSIS /P(PassiveMode) /R(安装后重启)
+    // ShellExecuteW("open") + NSIS /P(静默模式) /R(安装后重启)
     #[cfg(target_os = "windows")]
     {
         use std::ffi::OsStr;
@@ -165,9 +165,138 @@ pub async fn download_and_install(
                 SW_SHOW,
             );
         };
+
+        std::process::exit(0);
     }
 
-    std::process::exit(0);
+    #[cfg(target_os = "macos")]
+    {
+        let app_name = "Lanzou-Next";
+        let app_bundle = format!("{app_name}.app");
+        let applications = std::path::PathBuf::from("/Applications");
+
+        // 挂载 DMG
+        let mount_output = std::process::Command::new("hdiutil")
+            .args(["attach", "-nobrowse", "-quiet"])
+            .arg(&installer_path)
+            .output()
+            .map_err(|e| AppError::Update(format!("挂载 DMG 失败: {e}")))?;
+
+        if !mount_output.status.success() {
+            return Err(AppError::Update("挂载 DMG 失败".into()));
+        }
+
+        // 查找挂载点
+        let volumes = std::fs::read_dir("/Volumes")
+            .map_err(|e| AppError::Update(format!("读取 /Volumes 失败: {e}")))?;
+
+        let mut mount_point = None;
+        for entry in volumes.flatten() {
+            let path = entry.path();
+            if path.join(&app_bundle).exists() {
+                mount_point = Some(path);
+                break;
+            }
+        }
+
+        let mount_point = match mount_point {
+            Some(p) => p,
+            None => {
+                return Err(AppError::Update("DMG 中未找到应用".into()));
+            }
+        };
+
+        let src_app = mount_point.join(&app_bundle);
+        let dst_app = applications.join(&app_bundle);
+
+        // 优先直接复制，失败则通过 osascript 提权
+        let copy_ok = std::process::Command::new("ditto")
+            .args(["--replace", "--keepParent"])
+            .arg(&src_app)
+            .arg(&dst_app)
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+
+        if !copy_ok {
+            let script = format!(
+                r#"do shell script "ditto --replace --keepParent '{}' '/Applications/{}'" with administrator privileges"#,
+                src_app.display(),
+                app_bundle,
+            );
+            let status = std::process::Command::new("osascript")
+                .args(["-e", &script])
+                .status()
+                .map_err(|e| AppError::Update(format!("需要管理员权限: {e}")))?;
+
+            if !status.success() {
+                let _ = std::process::Command::new("hdiutil")
+                    .args(["detach", "-quiet", "-nobrowse"])
+                    .arg(&mount_point)
+                    .output();
+                return Err(AppError::Update("安装失败，请手动安装".into()));
+            }
+        }
+
+        // 卸载 DMG
+        let _ = std::process::Command::new("hdiutil")
+            .args(["detach", "-quiet", "-nobrowse"])
+            .arg(&mount_point)
+            .output();
+
+        // 清理下载的 DMG
+        let _ = std::fs::remove_file(&installer_path);
+
+        app.restart();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let is_appimage = std::env::var("APPIMAGE").is_ok();
+        if is_appimage {
+            let current_exe = std::env::current_exe()?;
+
+            // 直接删除旧文件并移入新文件
+            std::fs::remove_file(&current_exe)?;
+            std::fs::rename(&installer_path, &current_exe)?;
+            std::fs::set_permissions(&current_exe, std::fs::metadata(&current_exe)?.permissions())?;
+
+            app.restart();
+        } else {
+            let (cmd, args) = if installer_path
+                .extension()
+                .map(|e| e == "pkg" || e == "zst")
+                .unwrap_or(false)
+            {
+                ("pkexec", vec!["--disable-internal-agent", "pacman", "-U", "--noconfirm"])
+            } else if installer_path.extension().map(|e| e == "deb").unwrap_or(false) {
+                ("pkexec", vec!["--disable-internal-agent", "dpkg", "-i"])
+            } else {
+                ("pkexec", vec!["--disable-internal-agent", "rpm", "-U"])
+            };
+
+            let mut cmd_args: Vec<String> = args.iter().map(ToString::to_string).collect();
+            cmd_args.push(installer_path.to_str().unwrap_or_default().to_string());
+
+            let install_result = std::process::Command::new(cmd)
+                .args(&cmd_args)
+                .status();
+
+            // dpkg -i 缺依赖时自动修复
+            if install_result.as_ref().map(|s| !s.success()).unwrap_or(false) {
+                let _ = std::process::Command::new(cmd)
+                    .args(["--disable-internal-agent", "apt-get", "install", "-f", "-y"])
+                    .status();
+            }
+
+            if install_result.map(|s| s.success()).unwrap_or(false) {
+                let _ = std::fs::remove_file(&installer_path);
+                app.restart();
+            }
+
+            Err(AppError::Update("安装失败，请手动安装下载的包".into()))
+        }
+    }
 }
 
 #[derive(Deserialize, Clone)]
@@ -224,10 +353,37 @@ fn find_platform_asset(assets: &Option<Vec<GitHubAsset>>) -> (Option<String>, Op
     }
     #[cfg(target_os = "linux")]
     {
-        if let Some(a) = assets.iter().find(|a| a.name.ends_with(".deb")) {
+        let is_appimage = std::env::var("APPIMAGE").is_ok();
+        if is_appimage {
+            if let Some(a) = assets.iter().find(|a| a.name.ends_with(".AppImage")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
+        }
+        // 检测包管理器以选择对应资产
+        let has_pacman = which("pacman");
+        let has_dpkg = which("dpkg");
+        if has_pacman {
+            if let Some(a) = assets.iter().find(|a| a.name.ends_with(".pkg.tar.zst")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
+        } else if has_dpkg {
+            if let Some(a) = assets.iter().find(|a| a.name.ends_with(".deb")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
+        } else {
+            // 基于 rpm 的发行版
+            if let Some(a) = assets.iter().find(|a| a.name.ends_with(".rpm")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
+        }
+        // 回退：尝试任意可用资产
+        if let Some(a) = assets.iter().find(|a| a.name.ends_with(".AppImage")) {
             return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
         }
-        if let Some(a) = assets.iter().find(|a| a.name.ends_with(".AppImage")) {
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(a) = assets.iter().find(|a| a.name.ends_with(".dmg")) {
             return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
         }
     }
@@ -242,6 +398,18 @@ fn parse_latest_pre_release(body: &str) -> Result<Option<GitHubRelease>, AppErro
     let releases: Vec<GitHubRelease> = serde_json::from_str(body)?;
     let found = releases.iter().find(|r| r.prerelease).cloned();
     Ok(found.or_else(|| releases.first().cloned()))
+}
+
+/// 检查指定名称的二进制文件是否在 PATH 中
+#[cfg(target_os = "linux")]
+fn which(name: &str) -> bool {
+    std::process::Command::new("which")
+        .arg(name)
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
 }
 
 /// 版本比较：a > b 返回正数

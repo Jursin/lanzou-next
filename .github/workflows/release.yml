@@ -120,7 +120,7 @@ jobs:
       - name: Package .pkg.tar.zst
         shell: bash
         run: |
-          ver="${GITHUB_REF_NAME#v}"
+          ver="$(node -p "require('./_src/package.json').version")"
           pkgdir=$(mktemp -d)
 
           mkdir -p "$pkgdir"/{usr/bin,usr/share/applications}

@@ -1,0 +1,48 @@
+pkgname=lanzou-next
+pkgver=0.3.0
+pkgrel=1
+pkgdesc='蓝奏云客户端'
+arch=('x86_64')
+url='https://github.com/Jursin/lanzou-next'
+license=('MIT')
+depends=('gtk3' 'webkit2gtk-4.1' 'libappindicator-gtk3' 'librsvg' 'openssl' 'curl')
+provides=('lanzou-next')
+conflicts=('lanzou-next')
+
+# 使用空 source，直接打包已构建的产物
+source=()
+sha256sums=()
+
+package() {
+  local srcroot="$startdir/.."
+
+  install -Dm755 "$srcroot/src-tauri/target/release/lanzou-next" \
+    "$pkgdir/usr/bin/lanzou-next"
+
+  # icons
+  install -Dm644 "$srcroot/src-tauri/icons/32x32.png" \
+    "$pkgdir/usr/share/icons/hicolor/32x32/apps/lanzou-next.png"
+  install -Dm644 "$srcroot/src-tauri/icons/128x128.png" \
+    "$pkgdir/usr/share/icons/hicolor/128x128/apps/lanzou-next.png"
+  install -Dm644 "$srcroot/src-tauri/icons/128x128@2x.png" \
+    "$pkgdir/usr/share/icons/hicolor/256x256/apps/lanzou-next.png"
+  install -Dm644 "$srcroot/src-tauri/icons/512x512.png" \
+    "$pkgdir/usr/share/icons/hicolor/512x512/apps/lanzou-next.png"
+
+  # desktop entry
+  install -d "$pkgdir/usr/share/applications"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/lanzou-next.desktop" <<'EOF'
+[Desktop Entry]
+Name=蓝奏云盘
+Comment=蓝奏云客户端
+Exec=/usr/bin/lanzou-next
+Icon=lanzou-next
+Type=Application
+Categories=Utility;FileTransfer;
+Terminal=false
+EOF
+
+  # license
+  install -Dm644 "$srcroot/LICENSE" \
+    "$pkgdir/usr/share/licenses/lanzou-next/LICENSE"
+}

@@ -7,6 +7,11 @@ node_modules/
 dist-ssr/
 src-tauri/target/
 
+# makepkg build artifacts
+pkg/*.pkg.tar.zst
+pkg/pkg/
+pkg/src/
+
 # local env / runtime files
 *.local
 .env

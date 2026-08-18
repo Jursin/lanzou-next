@@ -8,6 +8,7 @@ import { usePreferenceStore } from '@/stores/preference'
 
 const downloading = ref(false)
 const downloadProgress = ref<UpdateDownloadProgress | null>(null)
+let lastUpdateInfo: UpdateInfo | null = null
 
 let dialogFn: ((info: UpdateInfo) => void) | null = null
 
@@ -59,7 +60,10 @@ export function useUpdateCheck() {
     try {
       const info = await checkForUpdate(!!preferenceStore.config.betaUpdate)
       recordCheckTime()
-      if (info && dialogFn) dialogFn(info)
+      if (info) {
+        lastUpdateInfo = info
+        if (dialogFn) dialogFn(info)
+      }
     } catch { /* ignore */ }
   }
 
@@ -72,8 +76,11 @@ export function useUpdateCheck() {
       return
     }
     recordCheckTime()
-    if (info && dialogFn) {
-      dialogFn(info)
+    if (info) {
+      lastUpdateInfo = info
+      if (dialogFn) dialogFn(info)
+    } else if (lastUpdateInfo && dialogFn) {
+      dialogFn(lastUpdateInfo)
     } else if (!info) {
       message.success('已是最新版本')
     }
