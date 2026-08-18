@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "蓝奏云盘",
+  "productName": "Lanzou-Next",
   "mainBinaryName": "lanzou-next",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "com.lanzou.next",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -43,13 +43,23 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      },
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libappindicator3-1"]
+      },
+      "rpm": {
+        "depends": ["webkit2gtk4.1", "gtk3", "libappindicator-gtk3"]
+      }
+    },
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
         "installMode": "both",
         "displayLanguageSelector": false,
-        "languages": ["SimpChinese"],
-        "template": "nsis/installer.nsi"
+        "languages": ["SimpChinese"]
       }
     }
   }

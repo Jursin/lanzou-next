@@ -1,15 +1,13 @@
 {
   "name": "lanzou-next",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "bundle:nsis": "tauri build --bundles nsis && pnpm bundle:rename",
-    "bundle:rename": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/rename-bundles.ps1",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/ --max-warnings=0",

@@ -1,4 +1,4 @@
-# lanzou-next
+# Lanzou-Next
 
 ![](https://img.shields.io/badge/Tauri_2-grey?logo=tauri)
 ![](https://img.shields.io/badge/Rust-grey?logo=rust)
@@ -61,20 +61,24 @@ pnpm dev
 # 前端类型检查 + 构建
 pnpm build
 
-# Windows NSIS 安装包（含重命名脚本）
-pnpm bundle:nsis
-
-# Linux .deb 包
-pnpm tauri build --bundles deb
+# Windows NSIS 安装包
+pnpm tauri build --bundles nsis
 
 # Linux AppImage
 pnpm tauri build --bundles appimage
 
-# macOS .dmg / .app
+# Linux .deb 包
+pnpm tauri build --bundles deb
+
+# Linux .rpm 包
+pnpm tauri build --bundles rpm
+
+# macOS .dmg
 pnpm tauri build --bundles dmg
 ```
 
-> **注意**：交叉编译需在目标平台或 CI 中执行。Windows 产出 `msi` + `nsis`。
+> [!warning]
+> Arch linuxdeploy 内置的 strip 版本太旧，不认识新 glibc 的 .relr.dyn 格式，需运行 `scripts/fix-linuxdeploy.sh` 修复缓存
 
 ## 项目结构
 
@@ -119,10 +123,9 @@ lanzou-next/
 │   │   └── lib.rs
 │   ├── build.rs            # Tauri 命令清单生成
 │   ├── tauri.conf.json     # Tauri 配置
-│   ├── Cargo.toml
-│   └── nsis/installer.nsi  # NSIS 自定义模板
+│   └── Cargo.toml
 ├── scripts/
-│   └── rename-bundles.ps1  # NSIS 包重命名
+│   └── fix-linuxdeploy.sh  # 修复脚本
 ├── package.json
 ├── vite.config.ts
 └── README.md

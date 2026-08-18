@@ -1,0 +1,242 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: windows-latest
+            rust_target: ""
+          - arch: arm64
+            os: windows-latest
+            rust_target: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        shell: bash
+        run: |
+          if [ -n "${{ matrix.rust_target }}" ]; then
+            pnpm tauri build --bundles nsis --target ${{ matrix.rust_target }}
+          else
+            pnpm tauri build --bundles nsis
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Windows-${{ matrix.arch }}
+          path: src-tauri/target/**/bundle/nsis/*.exe
+          if-no-files-found: error
+          include-hidden-files: true
+
+  linux-x64:
+    name: Linux x64
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libappindicator3-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tauri build --bundles appimage deb rpm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Linux-x64
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
+          if-no-files-found: error
+
+  linux-arm64:
+    name: Linux arm64
+    runs-on: ubuntu-22.04-arm
+    permissions:
+      contents: write
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libappindicator3-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tauri build --bundles appimage deb rpm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Linux-arm64
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/rpm/*.rpm
+          if-no-files-found: error
+
+  arch:
+    name: Arch Linux x64
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    permissions:
+      contents: write
+    steps:
+      - name: Install system deps
+        run: |
+          pacman -Syu --noconfirm base-devel rust nodejs npm git
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+      - uses: actions/checkout@v7
+        with:
+          path: src
+      - name: Setup pnpm
+        run: npm install -g pnpm@11
+      - name: Install and build
+        run: |
+          cp -r src/* /home/builder/
+          chown -R builder:builder /home/builder
+          cd /home/builder
+          su builder -c "pnpm install --frozen-lockfile"
+          su builder -c "pnpm tauri build --no-bundle"
+
+      - name: Package .pkg.tar.zst
+        shell: bash
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          pkgdir=$(mktemp -d)
+
+          mkdir -p "$pkgdir"/{usr/bin,usr/share/applications}
+          mkdir -p "$pkgdir"/usr/share/icons/hicolor/{32x32,128x128,256x256,512x512}/apps
+          mkdir -p "$pkgdir"/usr/share/licenses/lanzou-next
+
+          cp /home/builder/src-tauri/target/release/lanzou-next "$pkgdir/usr/bin/"
+          cp src/src-tauri/icons/32x32.png       "$pkgdir/usr/share/icons/hicolor/32x32/apps/lanzou-next.png"
+          cp src/src-tauri/icons/128x128.png     "$pkgdir/usr/share/icons/hicolor/128x128/apps/lanzou-next.png"
+          cp src/src-tauri/icons/128x128@2x.png  "$pkgdir/usr/share/icons/hicolor/256x256/apps/lanzou-next.png"
+          cp src/src-tauri/icons/512x512.png     "$pkgdir/usr/share/icons/hicolor/512x512/apps/lanzou-next.png"
+          cp src/LICENSE                         "$pkgdir/usr/share/licenses/lanzou-next/"
+
+          cat > "$pkgdir/usr/share/applications/lanzou-next.desktop" <<'EOF'
+          [Desktop Entry]
+          Name=蓝奏云盘
+          Comment=蓝奏云客户端
+          Exec=/usr/bin/lanzou-next
+          Icon=lanzou-next
+          Type=Application
+          Categories=Utility;FileTransfer;
+          Terminal=false
+          EOF
+
+          builddir=$(mktemp -d)
+          cat > "$builddir/PKGBUILD" <<EOF
+          pkgname=lanzou-next
+          pkgver=$ver
+          pkgrel=1
+          pkgdesc=蓝奏云客户端
+          arch=(x86_64)
+          url=https://github.com/${{ github.repository }}
+          license=(MIT)
+          options=(!lto !debug)
+          depends=(webkit2gtk-4.1 gtk3 libappindicator librsvg)
+          source=()
+          package() {
+            cp -r --no-preserve=ownership "$pkgdir"/* "\$pkgdir/"
+          }
+          EOF
+
+          cd "$builddir"
+          makepkg --noextract --nocheck --nobuild -f
+          makepkg -e --nocheck -f
+          cp *.pkg.tar.zst "$GITHUB_WORKSPACE/"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Arch-x64
+          path: "*.pkg.tar.zst"
+          if-no-files-found: error
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            os: macos-14
+          - arch: x64
+            os: macos-13
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v4
+        with: { version: 11 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm tauri build --bundles dmg
+      - uses: actions/upload-artifact@v7
+        with:
+          name: macOS-${{ matrix.arch }}
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+
+  release:
+    name: Publish Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, linux-x64, linux-arm64, arch, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: List all artifacts
+        run: find artifacts -type f | sort
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          draft: false
+          fail_on_unmatched_files: false

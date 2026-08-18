@@ -1,6 +1,6 @@
 import type { AppConfig } from '@/shared/types'
 
-export const VERSION = '0.2.0'
+export const VERSION = '0.3.0'
 
 export const LANZOU_URL = 'https://up.woozooo.com'
 
