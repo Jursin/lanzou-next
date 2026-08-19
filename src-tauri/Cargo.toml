@@ -3,7 +3,7 @@ name = "lanzou-next"
 version = "1.0.1"
 description = "蓝奏云客户端"
 authors = ["lanzou-next"]
-edition = "2021"
+edition = "2024"
 
 [lib]
 name = "lanzou_next_lib"
