@@ -16,7 +16,7 @@ export const COLOR_SCHEMES: ColorSchemeDefinition[] = [
   { id: 'mint', label: '薄荷绿', seed: '#10B981' },
   { id: 'rose', label: '玫瑰粉', seed: '#F43F5E' },
   { id: 'aurora', label: '极光紫', seed: '#8B5CF6' },
-  { id: 'coral', label: '珊瑚橙', seed: '#F97316' },
+  { id: 'coral', label: '珊瑚橙', seed: '#FE6600' },
   { id: 'glacier', label: '冰川青', seed: '#06B6D4' },
   { id: 'evergreen', label: '常青', seed: '#15803D' },
   { id: 'graphite', label: '石墨灰', seed: '#737373', variant: 'content' },

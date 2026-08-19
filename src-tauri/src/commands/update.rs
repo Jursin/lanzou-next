@@ -59,12 +59,8 @@ pub async fn check_for_update(
     _state: State<'_, AppState>,
     beta: Option<bool>,
 ) -> Result<Option<UpdateInfo>, AppError> {
-    let api_url = if beta.unwrap_or(false) {
-        format!("{UPDATE_API_URL}?per_page=20")
-    } else {
-        format!("{UPDATE_API_URL}/latest")
-    };
-    let url = apply_github_proxy(&app, &api_url)?;
+    let include_prerelease = beta.unwrap_or(false);
+    let url = apply_github_proxy(&app, &format!("{UPDATE_API_URL}?per_page=100"))?;
     let http = reqwest::Client::builder()
         .user_agent(crate::lanzou::client::DEFAULT_USER_AGENT)
         .build()
@@ -77,19 +73,19 @@ pub async fn check_for_update(
         )));
     }
     let body = resp.text().await?;
-    let release = if beta.unwrap_or(false) {
-        parse_latest_pre_release(&body)?
-    } else {
-        parse_release(&body)?
-    };
-    let Some(release) = release else {
+    let releases: Vec<GitHubRelease> = serde_json::from_str(&body)?;
+    let best = releases
+        .iter()
+        .filter(|r| include_prerelease || !r.prerelease)
+        .max_by(|a, b| compare_version(&a.tag_name, &b.tag_name).cmp(&0));
+    let Some(release) = best else {
         return Ok(None);
     };
     let current = env!("CARGO_PKG_VERSION");
     if compare_version(&release.tag_name, current) <= 0 {
         return Ok(None);
     }
-    Ok(Some(release.into_info()))
+    Ok(Some(release.clone().into_info()))
 }
 
 #[tauri::command]
@@ -98,6 +94,11 @@ pub async fn download_and_install(
     state: State<'_, AppState>,
     info: UpdateInfo,
 ) -> Result<(), AppError> {
+    // 重置取消标志必须在发起请求之前，否则会覆盖用户刚发出的取消请求
+    state
+        .update_cancel
+        .store(false, std::sync::atomic::Ordering::SeqCst);
+
     let asset_url = info
         .asset_url
         .ok_or_else(|| AppError::Update("无可用安装包".into()))?;
@@ -115,10 +116,15 @@ pub async fn download_and_install(
         )));
     }
     let total = resp.content_length().unwrap_or(0);
+    let cancel_flag = state.update_cancel.clone();
 
-    state
-        .update_cancel
-        .store(false, std::sync::atomic::Ordering::SeqCst);
+    // 请求期间用户可能已取消，这里再检查一次
+    if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+        state
+            .update_cancel
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+        return Err(AppError::Update("下载已取消".into()));
+    }
 
     use futures_util::StreamExt;
     use std::io::Write;
@@ -128,7 +134,6 @@ pub async fn download_and_install(
     let mut stream = resp.bytes_stream();
     let mut downloaded: u64 = 0;
     let mut last_emit = std::time::Instant::now();
-    let cancel_flag = state.update_cancel.clone();
 
     while let Some(chunk) = stream.next().await {
         if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
@@ -152,6 +157,16 @@ pub async fn download_and_install(
     }
     file.flush()?;
     drop(file);
+
+    // 下载完成后、启动安装前，若用户已取消则放弃安装
+    if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+        let _ = std::fs::remove_file(&installer_path);
+        state
+            .update_cancel
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+        return Err(AppError::Update("下载已取消".into()));
+    }
+
     let _ = app.emit(
         "update:download-progress",
         UpdateDownloadProgress { downloaded, total },
@@ -411,16 +426,6 @@ fn find_platform_asset(assets: &Option<Vec<GitHubAsset>>) -> (Option<String>, Op
         }
     }
     (None, None)
-}
-
-fn parse_release(body: &str) -> Result<Option<GitHubRelease>, AppError> {
-    Ok(Some(serde_json::from_str(body)?))
-}
-
-fn parse_latest_pre_release(body: &str) -> Result<Option<GitHubRelease>, AppError> {
-    let releases: Vec<GitHubRelease> = serde_json::from_str(body)?;
-    let found = releases.iter().find(|r| r.prerelease).cloned();
-    Ok(found.or_else(|| releases.first().cloned()))
 }
 
 /// 检查指定名称的二进制文件是否在 PATH 中

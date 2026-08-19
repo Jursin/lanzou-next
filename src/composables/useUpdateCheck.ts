@@ -8,6 +8,7 @@ import { usePreferenceStore } from '@/stores/preference'
 
 const downloading = ref(false)
 const downloadProgress = ref<UpdateDownloadProgress | null>(null)
+const downloadError = ref('')
 let lastUpdateInfo: UpdateInfo | null = null
 
 let dialogFn: ((info: UpdateInfo) => void) | null = null
@@ -30,6 +31,7 @@ export function useUpdateCheck() {
     if (downloading.value) return
     downloading.value = true
     downloadProgress.value = null
+    downloadError.value = ''
     const unlisten = await listen<UpdateDownloadProgress>('update:download-progress', (event) => {
       downloadProgress.value = event.payload
     })
@@ -38,7 +40,7 @@ export function useUpdateCheck() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       if (msg !== '更新检查失败: 下载已取消') {
-        message.error(msg)
+        downloadError.value = msg
       }
       downloading.value = false
       downloadProgress.value = null
@@ -88,5 +90,13 @@ export function useUpdateCheck() {
     }
   }
 
-  return { silentStartupCheck, manualCheck, downloading, downloadProgress, startDownload, handleClose }
+  return {
+    silentStartupCheck,
+    manualCheck,
+    downloading,
+    downloadProgress,
+    downloadError,
+    startDownload,
+    handleClose,
+  }
 }
