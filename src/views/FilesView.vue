@@ -40,6 +40,7 @@ import Sortable from 'sortablejs'
 import type { SortableEvent } from 'sortablejs'
 
 import ViewHeader from '@/components/layout/ViewHeader.vue'
+import { useRecycleDelete, setRecycleDeleteFinish, setFileDeleteFinish } from '@/composables/useRecycleDelete'
 import { useAppStore } from '@/stores/app'
 import { useFilesStore } from '@/stores/files'
 import { useTransferStore } from '@/stores/transfer'
@@ -65,8 +66,6 @@ import {
   lanzouRecycleAction,
   lanzouRecycleFiles,
   lanzouRecycleList,
-  lanzouRmFile,
-  lanzouRmFolder,
   lanzouRenameFile,
   lanzouRenameFolder,
   lanzouSetFileAccess,
@@ -82,6 +81,7 @@ const preferenceStore = usePreferenceStore()
 const trafficStore = useUploadTrafficStore()
 const message = useMessage()
 const dialog = useDialog()
+const { recycleDeleting, fileDeleting, startRecycleDelete, startFileDelete } = useRecycleDelete()
 
 const selected = ref<LsFile[]>([])
 /** Shift 连选锚点：最近一次普通勾选项在排序后全列表中的索引 */
@@ -309,6 +309,14 @@ function toggleSelectAll() {
 }
 
 onMounted(async () => {
+  setRecycleDeleteFinish(async () => {
+    recycleSelected.value = []
+    await loadRecycle()
+  })
+  setFileDeleteFinish(async () => {
+    selected.value = []
+    await refresh()
+  })
   await loadFiles(-1)
   if ('__TAURI_INTERNALS__' in window) {
     window.addEventListener('files:refresh', refresh)
@@ -323,6 +331,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  setRecycleDeleteFinish(null)
+  setFileDeleteFinish(null)
   window.removeEventListener('files:refresh', refresh)
   window.removeEventListener('dragenter', onDragEnter)
   window.removeEventListener('dragleave', onDragLeave)
@@ -494,7 +504,8 @@ async function toggleRecycle() {
   recycleMode.value = !recycleMode.value
   recycleSelected.value = []
   if (recycleMode.value) {
-    await loadRecycle()
+    // 后台删除进行中：不重复请求，由删除完成的 onFinish 回调刷新列表
+    if (!recycleDeleting.value) await loadRecycle()
   }
 }
 
@@ -572,26 +583,14 @@ async function restoreSelected() {
 }
 
 function deleteRecycleSelected(items: RecycleItem[]) {
-  if (!items.length) return
+  if (!items.length || recycleDeleting.value) return
   dialog.error({
     title: '彻底删除',
     content: `确定彻底删除选中的 ${items.length} 项吗？删除后不可恢复！`,
     positiveText: '彻底删除',
     negativeText: '取消',
-    onPositiveClick: async () => {
-      moving.value = true
-      try {
-        for (const it of items) {
-          await lanzouRecycleAction(it.id, it.type, 'delete')
-        }
-        message.success(`已彻底删除 ${items.length} 项`)
-        recycleSelected.value = []
-        await loadRecycle()
-      } catch (e) {
-        message.error(e instanceof Error ? e.message : String(e))
-      } finally {
-        moving.value = false
-      }
+    onPositiveClick: () => {
+      startRecycleDelete(items)
     },
   })
 }
@@ -885,28 +884,15 @@ async function doRename() {
 
 function doDelete() {
   const files = selected.value.length ? selected.value : contextFile.value ? [contextFile.value] : []
-  if (!files.length) return
+  if (!files.length || fileDeleting.value) return
   dialog.error({
     title: '删除',
     content: `确定删除选中的 ${files.length} 项吗？`,
     positiveText: '删除',
     negativeText: '取消',
     transformOrigin: 'center',
-    onPositiveClick: async () => {
-      moving.value = true
-      try {
-        for (const f of files) {
-          if (f.type === 'folder') await lanzouRmFolder(f.id)
-          else await lanzouRmFile(f.id)
-        }
-        message.success(`已删除 ${files.length} 项`)
-        selected.value = []
-        await refresh()
-      } catch (e) {
-        message.error(e instanceof Error ? e.message : String(e))
-      } finally {
-        moving.value = false
-      }
+    onPositiveClick: () => {
+      startFileDelete(files)
     },
   })
 }
@@ -1247,7 +1233,7 @@ async function doDesc() {
         </div>
         <div class="toolbar-actions">
           <template v-if="recycleMode && !recycleFolderView">
-            <NButton size="small" @click="restoreSelected" :disabled="!appStore.isLoggedIn || !recycleSelected.length">
+            <NButton size="small" @click="restoreSelected" :disabled="!appStore.isLoggedIn || !recycleSelected.length || recycleDeleting">
               <template #icon>
                 <NIcon>
                   <RefreshOutline />
@@ -1258,7 +1244,7 @@ async function doDesc() {
             <NButton
               size="small"
               type="error"
-              :disabled="!appStore.isLoggedIn || !recycleSelected.length"
+              :disabled="!appStore.isLoggedIn || !recycleSelected.length || recycleDeleting"
               @click="deleteRecycleSelected(recycleSelected)"
             >
               <template #icon>
@@ -1268,7 +1254,7 @@ async function doDesc() {
               </template>
               彻底删除 ({{ recycleSelected.length }})
             </NButton>
-            <NButton size="small" :disabled="!appStore.isLoggedIn" @click="loadRecycle">
+            <NButton size="small" :disabled="!appStore.isLoggedIn || recycleDeleting" @click="loadRecycle">
               <template #icon>
                 <NIcon>
                   <RefreshOutline />
@@ -1292,7 +1278,7 @@ async function doDesc() {
                   <CloudUploadOutline />
                 </NIcon>
               </template>
-              上传
+              上传文件
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="pickFolder">
               <template #icon>
@@ -1352,7 +1338,7 @@ async function doDesc() {
               </template>
               移动 ({{ selected.length }})
             </NButton>
-            <NButton size="small" type="error" :disabled="!appStore.isLoggedIn" @click="doDelete">
+            <NButton size="small" type="error" :disabled="!appStore.isLoggedIn || fileDeleting" @click="doDelete">
               <template #icon>
                 <NIcon>
                   <TrashOutline />
@@ -1391,7 +1377,7 @@ async function doDesc() {
     </div>
 
     <div class="files-body" :class="{ moving }">
-      <NSpin :show="recycleMode ? recycleLoading || moving : filesStore.loading || moving">
+      <NSpin :show="recycleMode ? recycleLoading || recycleDeleting || moving : filesStore.loading || moving || fileDeleting">
         <!-- 回收站 -->
         <template v-if="recycleMode">
           <!-- 文件夹内子文件（只读：文件名 + 大小） -->
@@ -1419,7 +1405,7 @@ async function doDesc() {
           </template>
           <!-- 回收站根列表 -->
           <template v-else>
-            <div v-if="!recycleLoading && recycleItems.length === 0" class="files-empty">
+            <div v-if="!recycleLoading && !recycleDeleting && recycleItems.length === 0" class="files-empty">
               <NEmpty :description="appStore.isLoggedIn ? '回收站为空' : '请先登录'" />
             </div>
             <div v-else class="file-table">
