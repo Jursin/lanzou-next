@@ -48,8 +48,8 @@ pub struct AppConfig {
     pub minimize_to_tray_on_close: Option<bool>,
     /// 轻量模式：最小化到托盘时销毁渲染进程降低内存
     pub lightweight_mode: Option<bool>,
-    /// 开发者模式：右键显示检查菜单
-    pub developer_mode: Option<bool>,
+    /// 开发者工具：右键显示检查菜单
+    pub dev_tools: Option<bool>,
     /// 日志级别: error | warn | info | debug | trace
     pub log_level: Option<String>,
     /// 启动时自动检查更新
@@ -98,7 +98,7 @@ pub fn config_get(app: AppHandle) -> Result<AppConfig, AppError> {
         split_size: get("split_size").and_then(|v| v.as_u64()).map(|v| v as u32),
         minimize_to_tray_on_close: get("minimize_to_tray_on_close").and_then(|v| v.as_bool()),
         lightweight_mode: get("lightweight_mode").and_then(|v| v.as_bool()),
-        developer_mode: get("developer_mode").and_then(|v| v.as_bool()),
+        dev_tools: get("dev_tools").and_then(|v| v.as_bool()),
         log_level: get("log_level").and_then(|v| v.as_str().map(String::from)),
         auto_check_update: get("auto_check_update").and_then(|v| v.as_bool()),
         beta_update: get("beta_update").and_then(|v| v.as_bool()),
@@ -164,8 +164,8 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
     if let Some(v) = cfg.lightweight_mode {
         store.set("lightweight_mode", serde_json::json!(v));
     }
-    if let Some(v) = cfg.developer_mode {
-        store.set("developer_mode", serde_json::json!(v));
+    if let Some(v) = cfg.dev_tools {
+        store.set("dev_tools", serde_json::json!(v));
     }
     if let Some(v) = cfg.log_level {
         if !crate::log_policy::valid_log_level(&v) {
@@ -224,7 +224,7 @@ fn write_defaults<R: Runtime>(
         split_size: Some(100),
         minimize_to_tray_on_close: Some(true),
         lightweight_mode: Some(true),
-        developer_mode: Some(false),
+        dev_tools: Some(false),
         log_level: Some("warn".into()),
         auto_check_update: Some(true),
         beta_update: Some(false),
@@ -242,7 +242,7 @@ fn write_defaults<R: Runtime>(
     store.set("split_size", serde_json::json!(100));
     store.set("minimize_to_tray_on_close", serde_json::json!(true));
     store.set("lightweight_mode", serde_json::json!(true));
-    store.set("developer_mode", serde_json::json!(false));
+    store.set("dev_tools", serde_json::json!(false));
     store.set("log_level", serde_json::json!("warn"));
     store.set("auto_check_update", serde_json::json!(true));
     store.set("beta_update", serde_json::json!(false));

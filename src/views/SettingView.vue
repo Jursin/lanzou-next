@@ -701,10 +701,10 @@ function onRestoreDefaults() {
                 @update:value="(v) => onConfigChange({ lightweightMode: v })"
               />
             </NFormItem>
-            <NFormItem label="开发者模式">
+            <NFormItem label="开发者工具">
               <NSwitch
-                :value="!!preferenceStore.config.developerMode"
-                @update:value="(v) => onConfigChange({ developerMode: v })"
+                :value="!!preferenceStore.config.devTools"
+                @update:value="(v) => onConfigChange({ devTools: v })"
               />
             </NFormItem>
             <NFormItem label="配置">

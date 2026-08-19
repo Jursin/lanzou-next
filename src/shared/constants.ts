@@ -47,7 +47,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   splitSize: 100,
   minimizeToTrayOnClose: true,
   lightweightMode: true,
-  developerMode: false,
+  devTools: false,
   logLevel: 'warn',
   autoCheckUpdate: true,
   betaUpdate: false,

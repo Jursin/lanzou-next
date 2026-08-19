@@ -199,7 +199,7 @@ export interface AppConfig {
   splitSize?: number
   minimizeToTrayOnClose?: boolean
   lightweightMode?: boolean
-  developerMode?: boolean
+  devTools?: boolean
   /** 日志级别: error | warn | info | debug | trace */
   logLevel?: string
   /** 启动时自动检查更新 */

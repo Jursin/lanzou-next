@@ -9,14 +9,14 @@ import UpdateCheck from '@/components/UpdateCheck.vue'
 const { theme, themeOverrides } = useNaiveTheme()
 const preferenceStore = usePreferenceStore()
 
-// 开发者模式关闭时阻止原生右键菜单；开启后保持正常浏览器行为。
+// 开发者工具关闭时阻止原生右键菜单；开启后保持正常浏览器行为。
 function onContextMenu(e: MouseEvent) {
   if (!preferenceStore.config.developerMode) {
     e.preventDefault()
   }
 }
 
-/** 开发者模式关闭时抑制 F12 等调出开发者工具 */
+/** 开发者工具关闭时抑制 F12 等调出开发者工具 */
 function onKeyDown(e: KeyboardEvent) {
   if (preferenceStore.config.developerMode) return
   const isF12 = e.key === 'F12'
