@@ -11,6 +11,12 @@
 
 一个轻量、美观的跨平台蓝奏云第三方客户端。
 
+## 🖼️ 截图
+
+| ![](docs/1.png) | ![](docs/2.png) |
+| - | - |
+| ![](docs/3.png) | ![](docs/4.png) |
+
 ## ✨ 功能特性
 
 - **文件管理**：浏览、搜索、排序、重命名、移动、删除文件/文件夹
@@ -89,51 +95,54 @@ pnpm tauri build --bundles dmg
 
 ```
 lanzou-next/
-├── src/                    # 前端 (Vue 3 + TS)
-│   ├── components/         # 通用组件
-│   ├── composables/        # 组合式函数
-│   ├── layouts/            # 布局组件
-│   ├── router/             # 路由
-│   ├── shared/             # 共享类型/常量/工具
-│   ├── stores/             # Pinia 状态
-│   ├── styles/             # 全局样式
-│   ├── views/              # 页面视图
+├── src/                        # 前端 (Vue 3 + TS)
+│   ├── assets/
+│   │   └── icons/              # Material Icon SVG 文件
+│   ├── components/
+│   │   └── layout/             # 窗口控件、导航等布局组件
+│   ├── composables/            # 组合式函数
+│   ├── layouts/                # 页面布局
+│   ├── router/                 # 路由
+│   ├── shared/                 # 共享类型/常量/工具
+│   ├── stores/                 # Pinia 状态
+│   ├── styles/                 # 全局样式
+│   ├── views/                  # 页面视图
 │   ├── App.vue
 │   └── main.ts
-├── src-tauri/              # 后端
+├── src-tauri/                  # 后端 (Rust)
 │   ├── src/
-│   │   ├── commands/       # Tauri 命令
-│   │   │   ├── config.rs   # 配置管理
-│   │   │   ├── lanzou.rs   # 文件/分享/目录操作
-│   │   │   ├── login.rs    # 登录/登出
-│   │   │   ├── log.rs      # 日志
-│   │   │   ├── ops.rs      # 重命名/移动/权限/回收站
-│   │   │   └── update.rs   # 更新检查与安装
+│   │   ├── commands/           # Tauri 命令
+│   │   │   ├── config.rs       # 配置管理
+│   │   │   ├── lanzou.rs       # 文件/分享/目录操作
+│   │   │   ├── login.rs        # 登录/登出
+│   │   │   ├── log.rs          # 日志
+│   │   │   ├── ops.rs          # 重命名/移动/权限/回收站
+│   │   │   └── update.rs       # 更新检查与安装
 │   │   ├── lanzou/
-│   │   │   ├── client.rs   # HTTP 客户端（Cookie/UA/反爬）
-│   │   │   ├── core/       # 核心业务
-│   │   │   │   ├── download.rs
-│   │   │   │   ├── upload.rs
-│   │   │   │   ├── merge.rs
-│   │   │   │   ├── share.rs
-│   │   │   │   ├── ls.rs
-│   │   │   │   ├── ops.rs
-│   │   │   │   ├── recycle.rs
-│   │   │   │   ├── files.rs
-│   │   │   │   └── profile.rs
-│   │   │   └── matcher.rs  # 正则/反爬解析
+│   │   │   ├── client.rs       # HTTP 客户端（Cookie/UA/反爬）
+│   │   │   ├── matcher.rs      # 正则/反爬解析
+│   │   │   └── core/           # 核心业务逻辑
+│   │   │       ├── download.rs # 下载
+│   │   │       ├── upload.rs   # 上传
+│   │   │       ├── merge.rs    # 分片合并
+│   │   │       ├── share.rs    # 分享解析
+│   │   │       ├── ls.rs       # 目录列表
+│   │   │       ├── ops.rs      # 文件操作
+│   │   │       ├── recycle.rs  # 回收站
+│   │   │       ├── files.rs    # 文件详情
+│   │   │       └── profile.rs  # 用户信息
 │   │   ├── error.rs
 │   │   ├── state.rs
 │   │   ├── log_policy.rs
 │   │   ├── main.rs
 │   │   └── lib.rs
-│   ├── build.rs            # Tauri 命令清单生成
-│   ├── tauri.conf.json     # Tauri 配置
+│   ├── build.rs
+│   ├── tauri.conf.json
 │   └── Cargo.toml
-├── pkg/                    # Arch Linux 打包
+├── pkg/                        # Arch Linux 打包
 │   └── PKGBUILD
 ├── scripts/
-│   └── fix-linuxdeploy.sh  # 修复脚本
+│   └── fix-linuxdeploy.sh
 ├── package.json
 ├── vite.config.ts
 └── README.md

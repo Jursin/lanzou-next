@@ -11,14 +11,14 @@ const preferenceStore = usePreferenceStore()
 
 // 开发者工具关闭时阻止原生右键菜单；开启后保持正常浏览器行为。
 function onContextMenu(e: MouseEvent) {
-  if (!preferenceStore.config.developerMode) {
+  if (!preferenceStore.config.devTools) {
     e.preventDefault()
   }
 }
 
 /** 开发者工具关闭时抑制 F12 等调出开发者工具 */
 function onKeyDown(e: KeyboardEvent) {
-  if (preferenceStore.config.developerMode) return
+  if (preferenceStore.config.devTools) return
   const isF12 = e.key === 'F12'
   const isCtrlShift = e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())
   if (isF12 || isCtrlShift) {
