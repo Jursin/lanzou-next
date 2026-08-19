@@ -129,24 +129,14 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  arch:
-    name: Arch Linux ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
+  arch-x64:
+    name: Arch Linux x64
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     needs: [frontend]
     container:
       image: archlinux:latest
       options: --user root
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: x64
-            os: ubuntu-latest
-            pkg_arch: x86_64
-          - arch: arm64
-            os: ubuntu-22.04-arm
-            pkg_arch: aarch64
     steps:
       - name: Install system deps
         run: |
@@ -186,7 +176,7 @@ jobs:
         run: |
           ver="$(node -p "require('./_src/package.json').version")"
           pkgdir=$(mktemp -d)
-          pkg_arch="${{ matrix.pkg_arch }}"
+          pkg_arch="x86_64"
 
           mkdir -p "$pkgdir"/{usr/bin,usr/share/applications}
           mkdir -p "$pkgdir"/usr/share/icons/hicolor/{32x32,128x128,256x256,512x512}/apps
@@ -240,7 +230,113 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: Arch-${{ matrix.arch }}
+          name: Arch-x64
+          path: "*.pkg.tar.zst"
+          if-no-files-found: error
+          retention-days: 7
+
+  arch-arm64:
+    name: Arch Linux arm64
+    runs-on: ubuntu-22.04-arm
+    timeout-minutes: 90
+    needs: [frontend]
+    steps:
+      - name: Install system deps
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          for i in $(seq 1 5); do
+            sudo apt-get update && \
+            sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-3-dev \
+              libappindicator3-dev librsvg2-dev patchelf xdg-utils \
+              libarchive-tools zstd && break
+            echo "apt install failed (attempt $i/5), retrying in 30s..."
+            sleep 30
+          done
+      - uses: actions/checkout@v7
+        with:
+          path: _src
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        continue-on-error: true
+        with:
+          cache-on-failure: true
+          workspaces: _src/src-tauri
+      - uses: actions/download-artifact@v7
+        with:
+          name: frontend-dist
+          path: _src/dist
+          merge-multiple: true
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
+      - uses: actions/setup-node@v7
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: _src/pnpm-lock.yaml }
+      - name: Install and build
+        working-directory: _src
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm tauri build --no-bundle --config '{"build":{"beforeBuildCommand":""}}'
+
+      - name: Package .pkg.tar.zst
+        shell: bash
+        run: |
+          ver="$(node -p "require('./_src/package.json').version")"
+          pkgdir=$(mktemp -d)
+
+          mkdir -p "$pkgdir"/{usr/bin,usr/share/applications}
+          mkdir -p "$pkgdir"/usr/share/icons/hicolor/{32x32,128x128,256x256,512x512}/apps
+          mkdir -p "$pkgdir"/usr/share/licenses/lanzou-next
+
+          cp _src/src-tauri/target/release/lanzou-next "$pkgdir/usr/bin/"
+          cp _src/src-tauri/icons/32x32.png       "$pkgdir/usr/share/icons/hicolor/32x32/apps/lanzou-next.png"
+          cp _src/src-tauri/icons/128x128.png     "$pkgdir/usr/share/icons/hicolor/128x128/apps/lanzou-next.png"
+          cp _src/src-tauri/icons/128x128@2x.png  "$pkgdir/usr/share/icons/hicolor/256x256/apps/lanzou-next.png"
+          cp _src/src-tauri/icons/512x512.png     "$pkgdir/usr/share/icons/hicolor/512x512/apps/lanzou-next.png"
+          cp _src/LICENSE                         "$pkgdir/usr/share/licenses/lanzou-next/"
+
+          cat > "$pkgdir/usr/share/applications/lanzou-next.desktop" <<'EOF'
+          [Desktop Entry]
+          Name=蓝奏云盘
+          Comment=蓝奏云客户端
+          Exec=/usr/bin/lanzou-next
+          Icon=lanzou-next
+          Type=Application
+          Categories=Utility;FileTransfer;
+          Terminal=false
+          EOF
+
+          builddate=$(date +%s)
+          size=$(du -sb "$pkgdir" | awk '{print $1}')
+
+          cat > "$pkgdir/.PKGINFO" <<EOF
+          pkgname = lanzou-next
+          pkgbase = lanzou-next
+          pkgver = $ver-1
+          pkgdesc = 蓝奏云客户端
+          url = https://github.com/${{ github.repository }}
+          builddate = $builddate
+          packager = GitHub Actions
+          size = $size
+          arch = aarch64
+          license = MIT
+          depends = webkit2gtk-4.1
+          depends = gtk3
+          depends = libappindicator
+          depends = librsvg
+          EOF
+
+          cd "$pkgdir"
+          bsdtar --format=bsdtar -cf "$GITHUB_WORKSPACE/lanzou-next-$ver-1-aarch64.pkg.tar" \
+            --uid=0 --gid=0 --uname=root --gname=root \
+            .PKGINFO usr
+          zstd -19 -f -q "$GITHUB_WORKSPACE/lanzou-next-$ver-1-aarch64.pkg.tar" \
+            -o "$GITHUB_WORKSPACE/lanzou-next-$ver-1-aarch64.pkg.tar.zst"
+          rm "$GITHUB_WORKSPACE/lanzou-next-$ver-1-aarch64.pkg.tar"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Arch-arm64
           path: "*.pkg.tar.zst"
           if-no-files-found: error
           retention-days: 7
@@ -295,7 +391,7 @@ jobs:
   release:
     name: Publish Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [windows, linux, arch, macos]
+    needs: [windows, linux, arch-x64, arch-arm64, macos]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
