@@ -49,8 +49,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_target }}
-          profile: minimal
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v7
         with:
@@ -94,9 +95,9 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          profile: minimal
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v7
         with:
@@ -144,6 +145,8 @@ jobs:
           path: _src
       - uses: Swatinem/rust-cache@v2
         continue-on-error: true
+        with:
+          cache-on-failure: true
       - uses: actions/download-artifact@v7
         with:
           name: frontend-dist
@@ -243,8 +246,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust_target || '' }}
-          profile: minimal
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v7
         with:
