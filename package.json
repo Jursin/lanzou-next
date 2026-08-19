@@ -19,7 +19,7 @@
     "@tauri-apps/plugin-dialog": "^2.7.2",
     "@tauri-apps/plugin-opener": "^2.5.4",
     "@vicons/ionicons5": "^0.13.0",
-    "naive-ui": "^2.45.0",
+    "naive-ui": "~2.44.1",
     "pinia": "^3.0.4",
     "sortablejs": "^1.15.7",
     "vue": "^3.5.41",
