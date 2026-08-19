@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { listen } from '@tauri-apps/api/event'
 
 import type { Profile, ThemeSource } from '@/shared/types'
 import { configGet, configSet, lanzouLogin, lanzouLogout, lanzouProfile } from '@/shared/api'
@@ -14,7 +14,6 @@ export const useAppStore = defineStore('app', () => {
   const profile = ref<Profile | null>(null)
   const loginLoading = ref(false)
   let loginListenerReady = false
-  let unlistenLoginSuccess: UnlistenFn | null = null
 
   const mql = window.matchMedia('(prefers-color-scheme: dark)')
   const systemDark = ref(mql.matches)
@@ -113,19 +112,11 @@ export const useAppStore = defineStore('app', () => {
   /** 订阅 Rust 端登录成功事件 */
   async function setupLoginListener() {
     if (loginListenerReady) return
-    unlistenLoginSuccess = await listen('login:success', () => {
+    await listen('login:success', () => {
       isLoggedIn.value = true
       void refreshProfile()
     })
     loginListenerReady = true
-  }
-
-  function disposeLoginListener() {
-    if (unlistenLoginSuccess) {
-      unlistenLoginSuccess()
-      unlistenLoginSuccess = null
-    }
-    loginListenerReady = false
   }
 
   return {
@@ -143,6 +134,5 @@ export const useAppStore = defineStore('app', () => {
     refreshProfile,
     logout,
     setupLoginListener,
-    disposeLoginListener,
   }
 })

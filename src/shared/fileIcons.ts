@@ -5,7 +5,6 @@ import {
   CodeSlashOutline,
   DocumentOutline,
   DocumentTextOutline,
-  FolderOpenOutline,
   ImageOutline,
   LogoAndroid,
   MusicalNotesOutline,
@@ -14,12 +13,9 @@ import {
 } from '@vicons/ionicons5'
 
 /**
- * 按扩展名返回不同文件类型的图标组件。
- * 未知类型则使用通用文档图标兜底。
+ * 按扩展名返回不同文件类型的图标组件，未知类型则使用通用文档图标兜底
  */
-export function getFileIconComponent(filename: string, isFolder = false): Component {
-  if (isFolder) return FolderOpenOutline
-
+export function getFileIconComponent(filename: string): Component {
   const ext = getExtension(filename).toLowerCase()
   if (!ext) return DocumentOutline
 
@@ -43,48 +39,46 @@ export function getFileIconComponent(filename: string, isFolder = false): Compon
 }
 
 /**
- * 按扩展名返回 iconColor。
- * 使用 m3 design token，保证与主题适配。
+ * 按扩展名返回 iconColor，使用 m3 design token 保证与主题适配
  */
-export function getFileIconInfo(filename: string): { iconColor: string } {
+export function getFileIconColor(filename: string): string {
   const ext = getExtension(filename).toLowerCase()
-  if (!ext) return { iconColor: 'var(--m3-on-surface-variant)' }
+  if (!ext) return 'var(--m3-on-surface-variant)'
 
   // 图片
-  if ('jpg,jpeg,png,webp,gif,svg,bmp,tiff,tif,icc,ico'.includes(ext)) return { iconColor: 'var(--m3-warning)' }
+  if ('jpg,jpeg,png,webp,gif,svg,bmp,tiff,tif,icc,ico'.includes(ext)) return 'var(--m3-warning)'
   // 视频
-  if ('mp4,avi,mkv,mov,flv,wmv,rm,rmvb,m4v'.includes(ext)) return { iconColor: 'var(--m3-primary-container)' }
+  if ('mp4,avi,mkv,mov,flv,wmv,rm,rmvb,m4v'.includes(ext)) return 'var(--m3-primary-container)'
   // 音频
-  if ('mp3,wav,flac,aac,ogg,wma,mid,midi'.includes(ext)) return { iconColor: '#e91e63' }
+  if ('mp3,wav,flac,aac,ogg,wma,mid,midi'.includes(ext)) return '#e91e63'
   // PDF
-  if (ext === 'pdf') return { iconColor: 'var(--m3-error)' }
+  if (ext === 'pdf') return 'var(--m3-error)'
   // Office 文档
-  if ('doc,docx,rdoc,rdocx'.includes(ext)) return { iconColor: 'color-mix(in srgb, var(--m3-primary) 78%, black)' }
+  if ('doc,docx,rdoc,rdocx'.includes(ext)) return 'color-mix(in srgb, var(--m3-primary) 78%, black)'
   // 表格
-  if ('xls,xlsx,csv,ods,fods,odt'.includes(ext)) return { iconColor: '#2e7d32' }
+  if ('xls,xlsx,csv,ods,fods,odt'.includes(ext)) return '#2e7d32'
   // 演示
-  if ('ppt,pptx,odp'.includes(ext)) return { iconColor: '#ef6c00' }
+  if ('ppt,pptx,odp'.includes(ext)) return '#ef6c00'
   // 磁盘镜像
-  if ('iso,img,gho'.includes(ext)) return { iconColor: '#546e7a' }
+  if ('iso,img,gho'.includes(ext)) return '#546e7a'
   // 压缩包
-  if ('zip,rar,7z,tar,gz,gzip,bz2,xz,lz4,zst,arj,deb,rpm,cab,bzip2,dmg,pkg'.includes(ext))
-    return { iconColor: 'var(--m3-info)' }
+  if ('zip,rar,7z,tar,gz,gzip,bz2,xz,lz4,zst,arj,deb,rpm,cab,bzip2,dmg,pkg'.includes(ext)) return 'var(--m3-info)'
   // 电子书
-  if ('epub,mobi,azw,azw3,fb2,cbz,cbr,djvu'.includes(ext)) return { iconColor: 'var(--m3-tertiary-container)' }
+  if ('epub,mobi,azw,azw3,fb2,cbz,cbr,djvu'.includes(ext)) return 'var(--m3-tertiary-container)'
   // CAD
-  if ('dwg,dxf,cad,hwt'.includes(ext)) return { iconColor: '#0d47a1' }
+  if ('dwg,dxf,cad,hwt'.includes(ext)) return '#0d47a1'
   // 字体
-  if ('ttf,otf,woff,woff2,ttc,eot,colr,cvt'.includes(ext)) return { iconColor: 'var(--m3-outline)' }
+  if ('ttf,otf,woff,woff2,ttc,eot,colr,cvt'.includes(ext)) return 'var(--m3-outline)'
   // Apple 包
-  if ('ipa,app,imazingapp,plist,xcassets,mobileconfig'.includes(ext)) return { iconColor: '#616161' }
+  if ('ipa,app,imazingapp,plist,xcassets,mobileconfig'.includes(ext)) return '#616161'
   // 可执行 / 脚本
-  if ('exe,dll,so,bin,msu,cmd,bat,ps1,sh'.includes(ext)) return { iconColor: 'var(--m3-on-surface-variant)' }
+  if ('exe,dll,so,bin,msu,cmd,bat,ps1,sh'.includes(ext)) return 'var(--m3-on-surface-variant)'
   // Android
-  if ('apk,apkm,apks,xapk'.includes(ext)) return { iconColor: '#388e3c' }
+  if ('apk,apkm,apks,xapk'.includes(ext)) return '#388e3c'
   // Chrome 扩展
-  if (ext === 'crx') return { iconColor: '#1e8e3e' }
+  if (ext === 'crx') return '#1e8e3e'
   // Java
-  if ('jar,jar_sign,jnlp'.includes(ext)) return { iconColor: '#ff6d00' }
+  if ('jar,jar_sign,jnlp'.includes(ext)) return '#ff6d00'
   // 开发配置
   if (
     [
@@ -126,19 +120,18 @@ export function getFileIconInfo(filename: string): { iconColor: string } {
       'latex',
     ].includes(ext)
   )
-    return { iconColor: '#78909c' }
+    return '#78909c'
   // 脑图 / 笔记
-  if (ext === 'xmind') return { iconColor: '#ab47bc' }
-  if (ext === 'jupyter') return { iconColor: '#f3712b' }
+  if (ext === 'xmind') return '#ab47bc'
+  if (ext === 'jupyter') return '#f3712b'
   // 数据库
-  if (ext === 'db' || ext === 'xda') return { iconColor: 'var(--m3-outline-variant)' }
+  if (ext === 'db' || ext === 'xda') return 'var(--m3-outline-variant)'
   // 游戏 / 特定格式
-  if ('w3x,cpk,osz,osk,ct,ke,cetrainer,it,ssf,bds,bdi,enc,txf,lolgezi'.includes(ext))
-    return { iconColor: 'var(--m3-primary)' }
+  if ('w3x,cpk,osz,osk,ct,ke,cetrainer,it,ssf,bds,bdi,enc,txf,lolgezi'.includes(ext)) return 'var(--m3-primary)'
   if ('appimage,rp,rplib,xpa,accdb,ce,e,z'.includes(ext))
-    return { iconColor: ext === 'z' ? 'var(--m3-primary-container)' : 'var(--m3-primary)' }
+    return ext === 'z' ? 'var(--m3-primary-container)' : 'var(--m3-primary)'
 
-  return { iconColor: 'var(--m3-on-surface-variant)' }
+  return 'var(--m3-on-surface-variant)'
 }
 
 /** 从文件名提取扩展名（不含点） */

@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 import type { CrumbsInfo, LsFile } from '@/shared/types'
@@ -10,9 +10,6 @@ export const useFilesStore = defineStore('files', () => {
   const crumbs = ref<CrumbsInfo[]>([{ id: '-1', name: '根目录' }])
   const loading = ref(false)
   const error = ref('')
-
-  const folders = computed(() => files.value.filter((f) => f.type === 'folder'))
-  const fileItems = computed(() => files.value.filter((f) => f.type === 'file'))
 
   async function load(fid?: number) {
     loading.value = true
@@ -34,5 +31,5 @@ export const useFilesStore = defineStore('files', () => {
     return load(folderId.value)
   }
 
-  return { folderId, files, crumbs, loading, error, folders, fileItems, load, refresh }
+  return { folderId, files, crumbs, loading, error, load, refresh }
 })

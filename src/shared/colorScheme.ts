@@ -34,8 +34,6 @@ function surfaceRoles(def: ColorSchemeDefinition, dark: boolean): Record<string,
   const t = (tone: number) => hexFromArgb(p.tone(tone))
   if (dark) {
     return {
-      '--m3-surface': t(6),
-      '--m3-surface-dim': t(6),
       '--m3-surface-container-lowest': t(4),
       '--m3-surface-container-low': t(10),
       '--m3-surface-container': t(12),
@@ -44,8 +42,6 @@ function surfaceRoles(def: ColorSchemeDefinition, dark: boolean): Record<string,
     }
   }
   return {
-    '--m3-surface': t(98),
-    '--m3-surface-dim': t(87),
     '--m3-surface-container-lowest': t(100),
     '--m3-surface-container-low': t(96),
     '--m3-surface-container': t(94),
@@ -62,24 +58,15 @@ function schemeVars(def: ColorSchemeDefinition, dark: boolean): Record<string, s
   const content = def.variant === 'content'
   const neutral = theme.palettes.neutral
   const primary = content ? h(neutral.tone(dark ? 80 : 40)) : h(s.primary)
-  const onPrimary = content ? h(neutral.tone(dark ? 20 : 100)) : h(s.onPrimary)
   const primaryContainer = content ? h(neutral.tone(dark ? 30 : 90)) : h(s.primaryContainer)
-  const onPrimaryContainer = content ? h(neutral.tone(dark ? 90 : 10)) : h(s.onPrimaryContainer)
   return {
     '--m3-primary': primary,
-    '--m3-on-primary': onPrimary,
     '--m3-primary-container': primaryContainer,
-    '--m3-on-primary-container': onPrimaryContainer,
-    '--m3-tertiary': h(s.tertiary),
-    '--m3-on-tertiary': h(s.onTertiary),
     '--m3-tertiary-container': h(s.tertiaryContainer),
-    '--m3-on-tertiary-container': h(s.onTertiaryContainer),
     '--m3-on-surface': h(s.onSurface),
     '--m3-on-surface-variant': h(s.onSurfaceVariant),
     '--m3-outline': h(s.outline),
     '--m3-outline-variant': h(s.outlineVariant),
-    '--m3-inverse-surface': h(s.inverseSurface),
-    '--m3-on-inverse-surface': h(s.inverseOnSurface),
     ...surfaceRoles(def, dark),
   }
 }

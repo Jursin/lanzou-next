@@ -24,6 +24,7 @@ import WindowControls from '@/components/layout/WindowControls.vue'
   position: relative;
   overflow: hidden;
 }
+
 .titlebar-drag {
   position: fixed;
   top: 0;
@@ -34,11 +35,13 @@ import WindowControls from '@/components/layout/WindowControls.vue'
   user-select: none;
   -webkit-app-region: drag;
 }
+
 .subnav-slot {
   width: var(--subnav-width);
   flex-shrink: 0;
   background-color: var(--subnav-bg);
 }
+
 .content {
   flex: 1;
   min-width: 0;

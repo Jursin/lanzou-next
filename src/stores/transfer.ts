@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { listen } from '@tauri-apps/api/event'
 
 import type { DownloadProgress, UploadProgress } from '@/shared/types'
 import {
@@ -68,7 +68,6 @@ export const useTransferStore = defineStore('transfer', () => {
   const runningDownloads = ref(0)
   const downloadDir = ref('')
   let listenerReady = false
-  const unlisteners: UnlistenFn[] = []
 
   function persist() {
     try {
@@ -337,13 +336,13 @@ export const useTransferStore = defineStore('transfer', () => {
   async function setupListeners() {
     if (listenerReady) return
     // 分片上传创建的云端子文件夹：记录到任务上，删除任务时用于清理云端文件夹
-    const unChunk = await listen<{ taskId: string; folderId: number }>('upload:chunk-folder', (e) => {
+    await listen<{ taskId: string; folderId: number }>('upload:chunk-folder', (e) => {
       const item = findIn(uploads.value, e.payload.taskId)
       if (!item) return
       if (!item.chunkFolderIds) item.chunkFolderIds = []
       if (!item.chunkFolderIds.includes(e.payload.folderId)) item.chunkFolderIds.push(e.payload.folderId)
     })
-    const unDownload = await listen<DownloadProgress>('download:progress', (e) => {
+    await listen<DownloadProgress>('download:progress', (e) => {
       const p = e.payload
       const item = findIn(downloads.value, p.id)
       if (!item) return
@@ -381,7 +380,7 @@ export const useTransferStore = defineStore('transfer', () => {
         item.status = 'running'
       }
     })
-    const unUpload = await listen<UploadProgress>('upload:progress', (e) => {
+    await listen<UploadProgress>('upload:progress', (e) => {
       const p = e.payload
       const item = findIn(uploads.value, p.id)
       if (!item) return
@@ -402,16 +401,7 @@ export const useTransferStore = defineStore('transfer', () => {
         item.status = 'running'
       }
     })
-    unlisteners.push(unChunk, unDownload, unUpload)
     listenerReady = true
-  }
-
-  function disposeListeners() {
-    while (unlisteners.length) {
-      const off = unlisteners.pop()
-      off?.()
-    }
-    listenerReady = false
   }
 
   return {
@@ -432,6 +422,5 @@ export const useTransferStore = defineStore('transfer', () => {
     removeCompleted,
     markLost,
     setupListeners,
-    disposeListeners,
   }
 })

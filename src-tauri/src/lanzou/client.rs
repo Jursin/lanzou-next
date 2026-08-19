@@ -39,8 +39,6 @@ impl LanzouClient {
         let client = ClientBuilder::new()
             .cookie_provider(Arc::new(Jar::default()))
             .gzip(true)
-            .brotli(true)
-            .deflate(true)
             .build()
             .expect("failed to build http client");
         Self {

@@ -28,8 +28,6 @@ pub async fn lanzou_login(
     let client = Client::builder()
         .redirect(Policy::none())
         .gzip(true)
-        .brotli(true)
-        .deflate(true)
         .build()
         .map_err(|e| AppError::Config(e.to_string()))?;
 

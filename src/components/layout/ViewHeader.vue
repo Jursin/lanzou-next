@@ -20,6 +20,7 @@ defineProps<{ title: string }>()
   user-select: none;
   flex-shrink: 0;
 }
+
 .panel-header h4 {
   margin: 0;
   color: var(--panel-title);
@@ -27,6 +28,7 @@ defineProps<{ title: string }>()
   font-weight: normal;
   line-height: 24px;
 }
+
 .header-extra {
   position: absolute;
   right: 0;

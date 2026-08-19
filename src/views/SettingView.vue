@@ -390,12 +390,7 @@ function showDisclaimer() {
   ]
   dialog.info({
     title: '免责声明',
-    content: () =>
-      h(
-        'div',
-        { style: 'white-space: pre-wrap; line-height: 1.8' },
-        lines.join('\n'),
-      ),
+    content: () => h('div', { style: 'white-space: pre-wrap; line-height: 1.8' }, lines.join('\n')),
     positiveText: '我知道了',
     transformOrigin: 'center',
   })
@@ -458,7 +453,9 @@ function onRestoreDefaults() {
               <NFormItem label="操作">
                 <NButton type="error" ghost size="small" @click="onLogout">
                   <template #icon>
-                    <NIcon :size="16"><LogOutOutline /></NIcon>
+                    <NIcon :size="16">
+                      <LogOutOutline />
+                    </NIcon>
                   </template>
                   退出登录
                 </NButton>
@@ -481,7 +478,9 @@ function onRestoreDefaults() {
               <NFormItem label="操作">
                 <NButton type="primary" ghost size="small" :loading="appStore.loginLoading" @click="onLogin">
                   <template #icon>
-                    <NIcon :size="16"><LogInOutline /></NIcon>
+                    <NIcon :size="16">
+                      <LogInOutline />
+                    </NIcon>
                   </template>
                   登录
                 </NButton>
@@ -522,7 +521,9 @@ function onRestoreDefaults() {
                   <template #trigger>
                     <NButton class="pref-icon-button" @click="pickDownloadDir">
                       <template #icon>
-                        <NIcon :size="16"><FolderOpenOutline /></NIcon>
+                        <NIcon :size="16">
+                          <FolderOpenOutline />
+                        </NIcon>
                       </template>
                     </NButton>
                   </template>
@@ -532,7 +533,9 @@ function onRestoreDefaults() {
                   <template #trigger>
                     <NButton class="pref-icon-button" @click="openDownloadDir">
                       <template #icon>
-                        <NIcon :size="16"><FolderOutline /></NIcon>
+                        <NIcon :size="16">
+                          <FolderOutline />
+                        </NIcon>
                       </template>
                     </NButton>
                   </template>
@@ -602,7 +605,9 @@ function onRestoreDefaults() {
                   <template #trigger>
                     <NButton class="pref-icon-button" @click="copyLogPath">
                       <template #icon>
-                        <NIcon :size="14"><CopyOutline /></NIcon>
+                        <NIcon :size="14">
+                          <CopyOutline />
+                        </NIcon>
                       </template>
                     </NButton>
                   </template>
@@ -612,7 +617,9 @@ function onRestoreDefaults() {
                   <template #trigger>
                     <NButton class="pref-icon-button" @click="revealLogPath">
                       <template #icon>
-                        <NIcon :size="14"><FolderOpenOutline /></NIcon>
+                        <NIcon :size="14">
+                          <FolderOpenOutline />
+                        </NIcon>
                       </template>
                     </NButton>
                   </template>
@@ -634,7 +641,9 @@ function onRestoreDefaults() {
             <NFormItem label=" ">
               <NButton type="error" ghost size="small" @click="onClearLog">
                 <template #icon>
-                  <NIcon><TrashOutline /></NIcon>
+                  <NIcon>
+                    <TrashOutline />
+                  </NIcon>
                 </template>
                 清空日志
               </NButton>
@@ -702,7 +711,9 @@ function onRestoreDefaults() {
               <div class="pref-inline-row">
                 <NButton type="error" ghost size="small" @click="onRestoreDefaults">
                   <template #icon>
-                    <NIcon><RefreshOutline /></NIcon>
+                    <NIcon>
+                      <RefreshOutline />
+                    </NIcon>
                   </template>
                   恢复默认设置
                 </NButton>
@@ -734,7 +745,9 @@ function onRestoreDefaults() {
               <div class="pref-inline-row">
                 <NButton size="small" @click="manualCheck">
                   <template #icon>
-                    <NIcon :size="14"><CloudDownloadOutline /></NIcon>
+                    <NIcon :size="14">
+                      <CloudDownloadOutline />
+                    </NIcon>
                   </template>
                   立即检查
                 </NButton>
@@ -750,7 +763,9 @@ function onRestoreDefaults() {
               <div class="about-link-row">
                 <NButton v-for="link in ABOUT_LINKS" :key="link.label" size="small" @click="onOpenLink(link.url)">
                   <template #icon>
-                    <NIcon :size="16"><component :is="ABOUT_LINK_ICONS[link.icon]" /></NIcon>
+                    <NIcon :size="16">
+                      <component :is="ABOUT_LINK_ICONS[link.icon]" />
+                    </NIcon>
                   </template>
                   {{ link.label }}
                 </NButton>
@@ -759,7 +774,9 @@ function onRestoreDefaults() {
             <NFormItem label="免责声明">
               <NButton size="small" @click="showDisclaimer">
                 <template #icon>
-                  <NIcon :size="14"><AlertCircleOutline /></NIcon>
+                  <NIcon :size="14">
+                    <AlertCircleOutline />
+                  </NIcon>
                 </template>
                 点击查看
               </NButton>
@@ -772,16 +789,12 @@ function onRestoreDefaults() {
 </template>
 
 <style scoped>
-.preference-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
 .panel-body {
   flex: 1;
   min-width: 0;
   overflow: hidden;
 }
+
 .pref-hint-label {
   display: inline-flex;
   flex-direction: column;
@@ -789,9 +802,11 @@ function onRestoreDefaults() {
   padding-bottom: 22px;
   line-height: 1.35;
 }
+
 .pref-hint-label__title {
   display: block;
 }
+
 .pref-hint-label__hint {
   display: block;
   color: var(--m3-on-surface-variant);
@@ -799,11 +814,13 @@ function onRestoreDefaults() {
   font-weight: 400;
   white-space: normal;
 }
+
 .color-scheme-picker {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
+
 .scheme-swatch {
   width: 26px;
   height: 26px;
@@ -815,9 +832,11 @@ function onRestoreDefaults() {
     transform 0.15s,
     border-color 0.15s;
 }
+
 .scheme-swatch:hover {
   transform: scale(1.1);
 }
+
 .scheme-swatch.active {
   border-color: var(--m3-on-surface);
   box-shadow: 0 0 0 2px var(--m3-primary);
@@ -829,7 +848,6 @@ function onRestoreDefaults() {
   gap: 8px;
 }
 
-/* User-Agent 设置 */
 .ua-field-wrapper {
   display: flex;
   flex-direction: column;
@@ -858,7 +876,7 @@ function onRestoreDefaults() {
   gap: 10px;
   padding: 8px 12px;
   margin-top: 6px;
-  border-radius: var(--m3-shape-small, 6px);
+  border-radius: 6px;
   background: var(--m3-error-container);
   opacity: 0;
   transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1);

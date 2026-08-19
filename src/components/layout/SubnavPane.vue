@@ -52,11 +52,13 @@ defineEmits<{ navigate: [route: string] }>()
   overflow-y: auto;
   overflow-x: hidden;
 }
+
 .subnav-inner {
   margin-top: var(--header-top-offset);
   padding: 0 24px;
   user-select: none;
 }
+
 .subnav-inner h3 {
   font-size: 16px;
   color: var(--subnav-title);
@@ -67,15 +69,18 @@ defineEmits<{ navigate: [route: string] }>()
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .subnav-inner ul {
   list-style: none;
   padding: 0;
   margin: 0;
   cursor: default;
 }
+
 .subnav-inner li {
   margin-bottom: 8px;
 }
+
 .subnav-button {
   position: relative;
   width: 100%;
@@ -96,12 +101,14 @@ defineEmits<{ navigate: [route: string] }>()
   border: none;
   min-width: 0;
 }
+
 .subnav-button:hover,
 .subnav-button.active,
 .subnav-button:focus-visible {
   background-color: var(--subnav-active-bg);
   outline: none;
 }
+
 .subnav-button:hover span,
 .subnav-button:hover .subnav-icon,
 .subnav-button.active span,
@@ -110,12 +117,14 @@ defineEmits<{ navigate: [route: string] }>()
 .subnav-button:focus-visible .subnav-icon {
   color: var(--subnav-active-text);
 }
+
 .subnav-label {
   flex: 1 1 auto;
   min-width: 0;
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
 .subnav-icon {
   flex: 0 0 auto;
   margin-right: 12px;

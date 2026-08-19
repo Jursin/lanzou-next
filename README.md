@@ -7,9 +7,9 @@
 ![](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
 ![](https://img.shields.io/github/license/Jursin/lanzou-next?logo=github)
 ![](https://img.shields.io/github/v/release/Jursin/lanzou-next?include_prereleases&logo=github)
-[![](https://img.shields.io/badge/爱发电-grey?logo=afdian)](https://afdian.com/a/jursin)
+[![](https://img.shields.io/badge/爱发电-赞助我-946CE6?logo=afdian)](https://afdian.com/a/jursin)
 
-一个轻量、快速的蓝奏云第三方客户端。
+一个轻量、美观的跨平台蓝奏云第三方客户端。
 
 ## ✨ 功能特性
 
@@ -83,7 +83,7 @@ pnpm tauri build --bundles dmg
 ```
 
 > [!warning]
-> Arch linuxdeploy 内置的 strip 版本太旧，不认识新 glibc 的 .relr.dyn 格式，需运行 `scripts/fix-linuxdeploy.sh` 修复缓存
+> Arch Linux 构建 AppImage 前需先运行 `scripts/fix-linuxdeploy.sh`——Tauri 缓存的 linuxdeploy 内置 `strip` 版本过旧，无法识别新版 glibc 的 `.relr.dyn` 格式，会导致构建报错。脚本会下载最新版 linuxdeploy 到 `~/.cache/tauri/`。
 
 ## 📁 项目结构
 

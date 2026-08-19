@@ -7,7 +7,7 @@ import { CloudDownloadOutline, SearchOutline } from '@vicons/ionicons5'
 import ViewHeader from '@/components/layout/ViewHeader.vue'
 import { useTransferStore } from '@/stores/transfer'
 import { lanzouShareFolder, lanzouShareInfo } from '@/shared/api'
-import { getFileIconComponent, getFileIconInfo } from '@/shared/fileIcons'
+import { getFileIconColor, getFileIconComponent } from '@/shared/fileIcons'
 import { expandRangeSelection } from '@/shared/util'
 
 interface ParseFile {
@@ -226,9 +226,11 @@ function downloadSelected() {
             @keydown.enter.prevent="handleEnter"
           />
           <NButton type="primary" :loading="loading" @click="parse">
-            <template #icon
-              ><NIcon><SearchOutline /></NIcon
-            ></template>
+            <template #icon>
+              <NIcon>
+                <SearchOutline />
+              </NIcon>
+            </template>
             解析
           </NButton>
         </div>
@@ -247,13 +249,17 @@ function downloadSelected() {
             style="width: 250px"
           >
             <template #prefix>
-              <NIcon :size="16"><SearchOutline /></NIcon>
+              <NIcon :size="16">
+                <SearchOutline />
+              </NIcon>
             </template>
           </NInput>
           <NButton type="primary" size="small" :disabled="!selected.length" @click="downloadSelected">
-            <template #icon
-              ><NIcon><CloudDownloadOutline /></NIcon
-            ></template>
+            <template #icon>
+              <NIcon>
+                <CloudDownloadOutline />
+              </NIcon>
+            </template>
             下载 ({{ selected.length }})
           </NButton>
         </div>
@@ -283,7 +289,7 @@ function downloadSelected() {
                   <NCheckbox :checked="isSelected(f)" />
                 </span>
                 <span class="col-name">
-                  <NIcon class="file-icon" :size="18" :color="getFileIconInfo(f.name).iconColor">
+                  <NIcon class="file-icon" :size="18" :color="getFileIconColor(f.name)">
                     <component :is="getFileIconComponent(f.name)" />
                   </NIcon>
                   <span class="file-name" :title="f.name">{{ f.name }}</span>
@@ -292,7 +298,9 @@ function downloadSelected() {
                 <span class="col-time">{{ f.time || '—' }}</span>
                 <span class="col-action" @click.stop>
                   <NButton size="small" text title="下载" @click="addToDownloads([f])">
-                    <NIcon :size="20"><CloudDownloadOutline /></NIcon>
+                    <NIcon :size="20">
+                      <CloudDownloadOutline />
+                    </NIcon>
                   </NButton>
                 </span>
               </div>
@@ -308,63 +316,48 @@ function downloadSelected() {
 </template>
 
 <style scoped>
-.parse-view {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
 .parse-body {
-  flex: 1;
-  margin: 0 36px 40px;
-  display: flex;
   padding-top: 8px;
-  flex-direction: column;
   gap: 12px;
-  min-height: 0;
 }
+
 .parse-form {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
 .form-row {
   display: flex;
   gap: 10px;
 }
+
 .parse-bar {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
 .parse-count {
   padding-left: 8px;
   font-size: 13px;
   color: var(--m3-on-surface-variant);
 }
+
 .parse-bar-actions {
   display: flex;
   gap: 8px;
 }
+
 .parse-list-wrap {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
-.parse-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.parse-table {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
+
 .parse-list-wrap :deep(.n-spin-container),
 .parse-list-wrap :deep(.n-spin-content) {
   height: 100%;
@@ -372,27 +365,15 @@ function downloadSelected() {
   flex-direction: column;
   min-height: 0;
 }
-.parse-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-}
-/* 文件行基础样式（hover/选中/表头/列）在 base.css 全局定义 */
+
 .col-size {
   width: 110px;
-  text-align: left;
-  font-size: 12px;
-  flex-shrink: 0;
-  color: var(--m3-on-surface-variant);
 }
+
 .col-time {
   width: 130px;
-  text-align: left;
-  font-size: 12px;
-  flex-shrink: 0;
-  color: var(--m3-on-surface-variant);
 }
+
 .col-action {
   width: 48px;
   display: flex;

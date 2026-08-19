@@ -9,7 +9,6 @@ export const usePreferenceStore = defineStore('preference', () => {
   const config = ref<AppConfig>({ ...DEFAULT_CONFIG })
 
   const downloadDir = computed(() => config.value.downloadDir)
-  const lanzouUrl = computed(() => config.value.lanzouUrl)
 
   async function load() {
     const cfg = await configGet()
@@ -21,5 +20,5 @@ export const usePreferenceStore = defineStore('preference', () => {
     await configSet(patch)
   }
 
-  return { config, downloadDir, lanzouUrl, load, update }
+  return { config, downloadDir, load, update }
 })

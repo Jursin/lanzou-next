@@ -78,6 +78,7 @@ function close() {
   height: 32px;
   z-index: 9999;
 }
+
 .caption-btn {
   width: 46px;
   height: 32px;
@@ -96,25 +97,31 @@ function close() {
   outline: none;
   padding: 0;
 }
+
 .caption-btn:hover {
   opacity: 1;
   background: color-mix(in srgb, var(--m3-on-surface) 8%, transparent);
 }
+
 .caption-btn:active {
   background: color-mix(in srgb, var(--m3-on-surface) 12%, transparent);
 }
+
 .caption-close:hover {
   background: #c42b1c;
   color: #fff;
   opacity: 1;
 }
+
 .caption-close:active {
   background: #b22a1b;
   color: #fff;
 }
+
 .unfocused .caption-btn {
   opacity: 0.4;
 }
+
 .unfocused .caption-btn:hover {
   opacity: 1;
 }

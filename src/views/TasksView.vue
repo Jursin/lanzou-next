@@ -441,21 +441,27 @@ watch(
             <span class="select-all-label">全选</span>
           </span>
           <NButton size="small" :disabled="!hasStartable" @click="startSelected">
-            <template #icon
-              ><NIcon><PlayOutline /></NIcon
-            ></template>
+            <template #icon>
+              <NIcon>
+                <PlayOutline />
+              </NIcon>
+            </template>
             开始
           </NButton>
           <NButton size="small" :disabled="!hasPausable" @click="pauseSelected">
-            <template #icon
-              ><NIcon><PauseOutline /></NIcon
-            ></template>
+            <template #icon>
+              <NIcon>
+                <PauseOutline />
+              </NIcon>
+            </template>
             暂停
           </NButton>
           <NButton size="small" :disabled="!selected.length" @click="deleteSelected">
-            <template #icon
-              ><NIcon><TrashOutline /></NIcon
-            ></template>
+            <template #icon>
+              <NIcon>
+                <TrashOutline />
+              </NIcon>
+            </template>
             删除
           </NButton>
         </div>
@@ -570,10 +576,14 @@ watch(
                 title="重新下载"
                 @click="confirmRetryItem(item)"
               >
-                <NIcon :size="20"><PlayOutline /></NIcon>
+                <NIcon :size="20">
+                  <PlayOutline />
+                </NIcon>
               </NButton>
               <NButton size="small" text title="删除" @click="confirmRemoveItem(item)">
-                <NIcon :size="20"><TrashOutline /></NIcon>
+                <NIcon :size="20">
+                  <TrashOutline />
+                </NIcon>
               </NButton>
             </template>
             <!-- 进行中：暂停/开始 + 删除 -->
@@ -584,12 +594,15 @@ watch(
                 :title="item.status === 'running' || item.status === 'pending' ? '暂停' : '开始'"
                 @click="item.status === 'running' || item.status === 'pending' ? pauseItem(item) : startItem(item)"
               >
-                <NIcon :size="20"
-                  ><PauseOutline v-if="item.status === 'running' || item.status === 'pending'" /><PlayOutline v-else
-                /></NIcon>
+                <NIcon :size="20">
+                  <PauseOutline v-if="item.status === 'running' || item.status === 'pending'" />
+                  <PlayOutline v-else />
+                </NIcon>
               </NButton>
               <NButton size="small" text title="删除" @click="confirmRemoveItem(item)">
-                <NIcon :size="20"><TrashOutline /></NIcon>
+                <NIcon :size="20">
+                  <TrashOutline />
+                </NIcon>
               </NButton>
             </template>
           </div>
@@ -614,18 +627,6 @@ watch(
 </template>
 
 <style scoped>
-.tasks-view {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.tasks-body {
-  flex: 1;
-  margin: 0 36px 40px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
 .kind-switch,
 .state-switch {
   display: inline-flex;
@@ -634,6 +635,7 @@ watch(
   padding: 2px;
   gap: 2px;
 }
+
 .seg-btn {
   padding: 4px 14px;
   font-size: 13px;
@@ -649,15 +651,18 @@ watch(
     background-color 0.2s,
     color 0.2s;
 }
+
 .seg-btn:hover {
   color: var(--m3-on-surface);
 }
+
 .seg-btn.active {
   background: var(--m3-surface-container-lowest);
   color: var(--m3-primary);
   font-weight: 500;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
+
 .tasks-badge {
   min-width: 16px;
   height: 16px;
@@ -669,6 +674,7 @@ watch(
   background: color-mix(in srgb, var(--m3-primary) 16%, transparent);
   color: var(--m3-primary);
 }
+
 .tasks-toolbar {
   flex-shrink: 0;
   display: flex;
@@ -677,26 +683,31 @@ watch(
   align-items: center;
   gap: 12px;
 }
+
 .toolbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .toolbar-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .select-all {
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
 }
+
 .select-all-label {
   font-size: 13px;
   color: var(--m3-on-surface-variant);
 }
+
 .tasks-list {
   flex: 1;
   overflow-y: auto;
@@ -704,9 +715,14 @@ watch(
   flex-direction: column;
   gap: 8px;
 }
+
 .empty {
-  margin-top: 60px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .task-item {
   display: flex;
   align-items: center;
@@ -717,16 +733,20 @@ watch(
   border: 1px solid var(--m3-outline-variant);
   cursor: pointer;
 }
+
 .task-item:hover {
   border-color: var(--m3-primary);
 }
+
 .task-item.selected {
   border-color: var(--m3-primary);
   background-color: color-mix(in srgb, var(--m3-primary) 8%, transparent);
 }
+
 .task-check {
   flex-shrink: 0;
 }
+
 .task-main {
   flex: 1;
   min-width: 0;
@@ -734,12 +754,14 @@ watch(
   flex-direction: column;
   gap: 6px;
 }
+
 .task-top {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
 }
+
 .task-name {
   flex: 1;
   font-size: 13px;
@@ -748,44 +770,55 @@ watch(
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .task-status {
   font-size: 12px;
   color: var(--m3-on-surface-variant);
   flex-shrink: 0;
 }
+
 .task-status.error {
   color: var(--m3-error);
 }
+
 .task-status.done {
   color: var(--m3-success);
 }
+
 .task-status.lost {
   color: var(--m3-error);
 }
+
 .task-status.paused {
   color: var(--m3-warning);
 }
+
 .task-status.running {
   color: var(--m3-primary);
 }
+
 .task-progress {
   width: 100%;
 }
+
 .task-meta {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
 }
+
 .meta-item {
   font-size: 12px;
   color: var(--m3-on-surface-variant);
 }
+
 .task-actions {
   flex-shrink: 0;
   display: flex;
   gap: 2px;
   opacity: 0.7;
 }
+
 .task-item:hover .task-actions {
   opacity: 1;
 }

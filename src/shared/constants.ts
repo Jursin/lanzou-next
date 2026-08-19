@@ -34,8 +34,6 @@ export const USER_AGENT_PRESETS = [
 /** 可选的日志级别（与后端 LevelFilter 对应） */
 export const LOG_LEVELS = ['error', 'warn', 'info', 'debug', 'trace'] as const
 
-export type LogLevel = (typeof LOG_LEVELS)[number]
-
 export const DEFAULT_CONFIG: AppConfig = {
   lanzouUrl: LANZOU_URL,
   userAgent: DEFAULT_USER_AGENT,
@@ -55,10 +53,10 @@ export const DEFAULT_CONFIG: AppConfig = {
   betaUpdate: false,
 }
 
-/** 关于页外部链接 */
+/** 关于内的外部链接 */
 export const ABOUT_LINKS = [
   { label: 'GitHub', url: 'https://github.com/Jursin/lanzou-next', icon: 'LogoGithub' },
-  { label: '更新日志', url: 'https://github.com/Jursin/lanzou-next/releases', icon: 'RocketOutline' },
+  { label: '更新日志', url: 'https://github.com/Jursin/lanzou-next/blob/main/CHANGELOG.md', icon: 'RocketOutline' },
   { label: '开源许可', url: 'https://github.com/Jursin/lanzou-next/blob/main/LICENSE', icon: 'DocumentTextOutline' },
   { label: '赞助与支持', url: 'https://afdian.com/a/jursin', icon: 'HeartOutline' },
 ] as const

@@ -64,7 +64,9 @@ export function useUpdateCheck() {
         lastUpdateInfo = info
         if (dialogFn) dialogFn(info)
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   async function manualCheck() {

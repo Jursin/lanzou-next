@@ -53,7 +53,7 @@ import {
   commonMergedName,
   parseSizeText,
 } from '@/shared/util'
-import { getFileIconComponent, getFileIconInfo } from '@/shared/fileIcons'
+import { getFileIconColor, getFileIconComponent } from '@/shared/fileIcons'
 import type { LsFile, RecycleFile, RecycleItem } from '@/shared/types'
 import {
   lanzouFileDescription,
@@ -1218,9 +1218,11 @@ async function doDesc() {
   <div class="files-view" @dragenter.prevent @dragover.prevent @drop.prevent>
     <ViewHeader title="我的文件">
       <NButton size="small" :type="recycleMode ? 'default' : 'primary'" @click="toggleRecycle">
-        <template #icon
-          ><NIcon><TrashOutline /></NIcon
-        ></template>
+        <template #icon>
+          <NIcon>
+            <TrashOutline />
+          </NIcon>
+        </template>
         {{ recycleMode ? '返回' : '回收站' }}
       </NButton>
     </ViewHeader>
@@ -1237,16 +1239,20 @@ async function doDesc() {
             @clear="clearSearch"
           >
             <template #prefix>
-              <NIcon :size="16"><SearchOutline /></NIcon>
+              <NIcon :size="16">
+                <SearchOutline />
+              </NIcon>
             </template>
           </NInput>
         </div>
         <div class="toolbar-actions">
           <template v-if="recycleMode && !recycleFolderView">
             <NButton size="small" @click="restoreSelected" :disabled="!appStore.isLoggedIn || !recycleSelected.length">
-              <template #icon
-                ><NIcon><RefreshOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <RefreshOutline />
+                </NIcon>
+              </template>
               恢复 ({{ recycleSelected.length }})
             </NButton>
             <NButton
@@ -1255,85 +1261,111 @@ async function doDesc() {
               :disabled="!appStore.isLoggedIn || !recycleSelected.length"
               @click="deleteRecycleSelected(recycleSelected)"
             >
-              <template #icon
-                ><NIcon><TrashOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <TrashOutline />
+                </NIcon>
+              </template>
               彻底删除 ({{ recycleSelected.length }})
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="loadRecycle">
-              <template #icon
-                ><NIcon><RefreshOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <RefreshOutline />
+                </NIcon>
+              </template>
             </NButton>
           </template>
           <template v-else-if="recycleMode && recycleFolderView">
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="backToRecycleRoot">
-              <template #icon
-                ><NIcon><RefreshOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <RefreshOutline />
+                </NIcon>
+              </template>
             </NButton>
           </template>
           <template v-else-if="!selected.length">
             <NButton size="small" type="primary" :disabled="!appStore.isLoggedIn" @click="pickFiles">
-              <template #icon
-                ><NIcon><CloudUploadOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <CloudUploadOutline />
+                </NIcon>
+              </template>
               上传
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="pickFolder">
-              <template #icon
-                ><NIcon><FolderOpenOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <FolderOpenOutline />
+                </NIcon>
+              </template>
               上传文件夹
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="showMkdir = true">
-              <template #icon
-                ><NIcon><AddOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <AddOutline />
+                </NIcon>
+              </template>
               新建文件夹
             </NButton>
           </template>
           <template v-else>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="doShare">
-              <template #icon
-                ><NIcon><LinkOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <LinkOutline />
+                </NIcon>
+              </template>
               分享 ({{ selected.length }})
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="openAccess">
-              <template #icon
-                ><NIcon><KeyOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <KeyOutline />
+                </NIcon>
+              </template>
               设置密码
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="doDownload(selected)">
-              <template #icon
-                ><NIcon><CloudDownloadOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <CloudDownloadOutline />
+                </NIcon>
+              </template>
               下载 ({{ selected.length }})
             </NButton>
             <NButton v-if="mergeGroup" size="small" :disabled="!appStore.isLoggedIn" @click="doMergeDownload">
-              <template #icon
-                ><NIcon><CopyOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <CopyOutline />
+                </NIcon>
+              </template>
               合并下载
             </NButton>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="openMoveDialog(selected)">
-              <template #icon
-                ><NIcon><MoveOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <MoveOutline />
+                </NIcon>
+              </template>
               移动 ({{ selected.length }})
             </NButton>
             <NButton size="small" type="error" :disabled="!appStore.isLoggedIn" @click="doDelete">
-              <template #icon
-                ><NIcon><TrashOutline /></NIcon
-              ></template>
+              <template #icon>
+                <NIcon>
+                  <TrashOutline />
+                </NIcon>
+              </template>
               删除 ({{ selected.length }})
             </NButton>
           </template>
           <NButton v-if="!recycleMode" size="small" :disabled="!appStore.isLoggedIn" @click="refresh">
             <template #icon>
-              <NIcon><RefreshOutline /></NIcon>
+              <NIcon>
+                <RefreshOutline />
+              </NIcon>
             </template>
           </NButton>
         </div>
@@ -1375,7 +1407,7 @@ async function doDesc() {
                 </div>
                 <div v-for="f in recycleFiles" :key="f.name" class="file-row">
                   <span class="col-name">
-                    <NIcon class="file-icon" :size="18" :color="getFileIconInfo(f.name).iconColor">
+                    <NIcon class="file-icon" :size="18" :color="getFileIconColor(f.name)">
                       <component :is="getFileIconComponent(f.name)" />
                     </NIcon>
                     <span class="file-name">{{ f.name }}</span>
@@ -1418,7 +1450,7 @@ async function doDesc() {
                     <NIcon
                       class="file-icon"
                       :size="18"
-                      :color="item.type === 'folder' ? 'var(--m3-primary)' : getFileIconInfo(item.name).iconColor"
+                      :color="item.type === 'folder' ? 'var(--m3-primary)' : getFileIconColor(item.name)"
                     >
                       <component :is="item.type === 'folder' ? FolderOpenOutline : getFileIconComponent(item.name)" />
                     </NIcon>
@@ -1448,45 +1480,45 @@ async function doDesc() {
                 文件名
                 <span class="file-count">(共{{ filesStore.files.length }}项)</span>
                 <span class="sort-arrows" :class="sortArrowClass('name')">
-                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'name' && sortAsc }"
-                    ><CaretUpOutline
-                  /></NIcon>
-                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'name' && !sortAsc }"
-                    ><CaretDownOutline
-                  /></NIcon>
+                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'name' && sortAsc }">
+                    <CaretUpOutline />
+                  </NIcon>
+                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'name' && !sortAsc }">
+                    <CaretDownOutline />
+                  </NIcon>
                 </span>
               </span>
               <span class="col-size sortable" @click="toggleSort('size')">
                 大小
                 <span class="sort-arrows" :class="sortArrowClass('size')">
-                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'size' && sortAsc }"
-                    ><CaretUpOutline
-                  /></NIcon>
-                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'size' && !sortAsc }"
-                    ><CaretDownOutline
-                  /></NIcon>
+                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'size' && sortAsc }">
+                    <CaretUpOutline />
+                  </NIcon>
+                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'size' && !sortAsc }">
+                    <CaretDownOutline />
+                  </NIcon>
                 </span>
               </span>
               <span class="col-time sortable" @click="toggleSort('time')">
                 时间
                 <span class="sort-arrows" :class="sortArrowClass('time')">
-                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'time' && sortAsc }"
-                    ><CaretUpOutline
-                  /></NIcon>
-                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'time' && !sortAsc }"
-                    ><CaretDownOutline
-                  /></NIcon>
+                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'time' && sortAsc }">
+                    <CaretUpOutline />
+                  </NIcon>
+                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'time' && !sortAsc }">
+                    <CaretDownOutline />
+                  </NIcon>
                 </span>
               </span>
               <span class="col-downloads sortable" @click="toggleSort('downloads')">
                 下载
                 <span class="sort-arrows" :class="sortArrowClass('downloads')">
-                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'downloads' && sortAsc }"
-                    ><CaretUpOutline
-                  /></NIcon>
-                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'downloads' && !sortAsc }"
-                    ><CaretDownOutline
-                  /></NIcon>
+                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'downloads' && sortAsc }">
+                    <CaretUpOutline />
+                  </NIcon>
+                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'downloads' && !sortAsc }">
+                    <CaretDownOutline />
+                  </NIcon>
                 </span>
               </span>
             </div>
@@ -1511,7 +1543,7 @@ async function doDesc() {
                   <NIcon
                     class="file-icon"
                     :size="18"
-                    :color="file.type === 'folder' ? 'var(--m3-primary)' : getFileIconInfo(file.name).iconColor"
+                    :color="file.type === 'folder' ? 'var(--m3-primary)' : getFileIconColor(file.name)"
                   >
                     <component :is="file.type === 'folder' ? FolderOpenOutline : getFileIconComponent(file.name)" />
                   </NIcon>
@@ -1533,7 +1565,9 @@ async function doDesc() {
     <!-- 拖拽上传遮罩 -->
     <div v-if="dragging" class="upload-mask">
       <div class="upload-mask-inner">
-        <NIcon :size="48"><CloudUploadOutline /></NIcon>
+        <NIcon :size="48">
+          <CloudUploadOutline />
+        </NIcon>
         <p>上传到: {{ currentFolderName }}</p>
       </div>
     </div>
@@ -1664,11 +1698,9 @@ async function doDesc() {
 
 <style scoped>
 .files-view {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
   position: relative;
 }
+
 .files-toolbar {
   margin: 0 36px;
   padding: 8px 0;
@@ -1677,12 +1709,14 @@ async function doDesc() {
   gap: 8px;
   flex-shrink: 0;
 }
+
 .toolbar-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
+
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -1691,6 +1725,7 @@ async function doDesc() {
   overflow: hidden;
   white-space: nowrap;
 }
+
 .crumb {
   cursor: pointer;
   color: var(--m3-on-surface-variant);
@@ -1701,114 +1736,94 @@ async function doDesc() {
     background-color 0.15s,
     color 0.15s;
 }
+
 .crumb:hover {
   color: var(--m3-primary);
   background-color: var(--m3-surface-container-highest);
 }
+
 .crumb.current {
   color: var(--m3-on-surface);
   font-weight: 500;
 }
+
 .crumb-sep {
   color: var(--m3-outline-variant);
 }
+
 .toolbar-search {
   flex: 1;
   max-width: 250px;
   transition: max-width 0.25s ease;
 }
+
 .toolbar-search:focus-within {
   max-width: 100%;
 }
+
 .toolbar-search :deep(.n-input) {
   width: 100%;
 }
+
 .toolbar-actions {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
   align-items: center;
 }
-.files-body {
-  flex: 1;
-  margin: 0 36px 40px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
+
 .files-body :deep(.n-spin-container),
 .files-body :deep(.n-spin-content) {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
+
 .files-empty {
-  flex: 1;
-  display: flex;
   margin-top: 60px;
-  align-items: center;
-  justify-content: center;
 }
-.file-table {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-/* 滚动容器只包含数据行，滚动条从标题行下方开始；恒定预留滚动条空间避免挤压/抖动 */
-.files-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-}
-/* 文件行基础样式（hover/选中/表头/列）在 base.css 全局定义 */
+
 .file-row.folder:hover::before {
   background-color: var(--m3-primary-container);
 }
-/* 拖拽目标高亮：细虚线边框 + 主色底（::before 自带圆角，随行内缩 1px 不压分隔线） */
+
 .file-row.drop-target::before {
   background-color: color-mix(in srgb, var(--m3-primary) 18%, transparent);
   inset: 1px;
   border: 1px dashed var(--m3-primary);
 }
-/* SortableJS 拖拽样式 */
+
 .file-sortable-ghost {
   opacity: 0.4;
 }
+
 .file-sortable-chosen {
   opacity: 0.6;
 }
+
 .file-sortable-fallback {
   opacity: 0.9;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
   background-color: var(--m3-surface-container-high);
 }
+
 .file-row.folder .file-icon {
   color: var(--m3-primary);
 }
+
 .col-size {
   width: 90px;
-  text-align: left;
-  font-size: 12px;
-  color: var(--m3-on-surface-variant);
-  flex-shrink: 0;
 }
+
 .col-time {
   width: 120px;
-  font-size: 12px;
-  color: var(--m3-on-surface-variant);
-  flex-shrink: 0;
 }
+
 .col-downloads {
   width: 70px;
-  text-align: left;
-  font-size: 12px;
-  color: var(--m3-on-surface-variant);
-  flex-shrink: 0;
 }
-/* 表头排序 */
+
 .sortable {
   cursor: pointer;
   user-select: none;
@@ -1816,6 +1831,7 @@ async function doDesc() {
   align-items: center;
   gap: 4px;
 }
+
 .sort-arrows {
   display: inline-flex;
   flex-direction: column;
@@ -1823,6 +1839,7 @@ async function doDesc() {
   gap: 0;
   color: var(--m3-on-surface-variant);
 }
+
 .sort-arrows :deep(.n-icon) {
   display: block;
   height: 8px;
@@ -1831,39 +1848,46 @@ async function doDesc() {
   margin: 0;
   padding: 0;
 }
+
 .sort-arrows :deep(.n-icon svg) {
   display: block;
 }
-/* 未激活箭头浅灰（半透明），仅激活方向的箭头变深（主色实心） */
+
 .sort-arrows .sort-up,
 .sort-arrows .sort-down {
   opacity: 0.35;
   transition: color 0.2s;
 }
+
 .sort-arrows .sort-up.on,
 .sort-arrows .sort-down.on {
   opacity: 1;
   color: var(--m3-primary);
 }
+
 .access-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
 .access-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .access-label {
   font-size: 13px;
   color: var(--m3-on-surface);
 }
+
 .access-hint {
   margin: 0;
   font-size: 12px;
   color: var(--m3-error);
 }
+
 .share-links {
   margin: 0;
   white-space: pre-line;
@@ -1873,16 +1897,18 @@ async function doDesc() {
   max-height: 300px;
   overflow: auto;
 }
+
 .move-tree {
   max-height: 300px;
   overflow: auto;
 }
-/* 箭头图标容器放大并居中 */
+
 .move-tree :deep(.n-tree-node-switcher) {
   height: var(--n-node-content-height);
   align-items: center;
   justify-content: center;
 }
+
 .move-tree :deep(.n-tree-node-switcher .n-tree-node-switcher__icon) {
   height: 20px;
   width: 20px;
@@ -1891,13 +1917,15 @@ async function doDesc() {
   justify-content: center;
   display: flex;
 }
-/* 选中节点背景圆角调大 */
+
 .move-tree :deep(.n-tree-node-content) {
   border-radius: 6px;
 }
+
 .move-tree :deep(.n-tree-node) {
   border-radius: 6px;
 }
+
 .upload-mask {
   position: absolute;
   inset: 0;
@@ -1908,11 +1936,12 @@ async function doDesc() {
   justify-content: center;
   background: color-mix(in srgb, var(--m3-primary) 10%, transparent);
 }
-/* 移动进行中：与列表加载一致——淡化内容 + 转圈，并拦截列表交互 */
+
 .files-body.moving :deep(.n-spin-content) {
   opacity: 0.5;
   pointer-events: none;
 }
+
 .upload-mask-inner {
   display: flex;
   flex-direction: column;
@@ -1928,12 +1957,12 @@ async function doDesc() {
 </style>
 
 <style>
-/* 右键菜单"删除"项：图标与文字始终 error 色，悬浮背景与其它菜单项一致 */
 .n-dropdown-menu .dropdown-option-danger {
   --n-option-text-color: var(--m3-error);
   --n-option-text-color-hover: var(--m3-error);
   --n-prefix-color: var(--m3-error);
 }
+
 .n-dropdown-menu .dropdown-option-danger .n-dropdown-option-body__prefix,
 .n-dropdown-menu .dropdown-option-danger .n-dropdown-option-body:hover .n-dropdown-option-body__prefix {
   color: var(--m3-error) !important;
