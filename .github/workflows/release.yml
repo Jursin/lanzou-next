@@ -130,13 +130,23 @@ jobs:
           retention-days: 7
 
   arch:
-    name: Arch Linux x64
-    runs-on: ubuntu-latest
+    name: Arch Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     needs: [frontend]
     container:
       image: archlinux:latest
       options: --user root
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: ubuntu-latest
+            pkg_arch: x86_64
+          - arch: arm64
+            os: ubuntu-22.04-arm
+            pkg_arch: aarch64
     steps:
       - name: Install system deps
         run: |
@@ -176,6 +186,7 @@ jobs:
         run: |
           ver="$(node -p "require('./_src/package.json').version")"
           pkgdir=$(mktemp -d)
+          pkg_arch="${{ matrix.pkg_arch }}"
 
           mkdir -p "$pkgdir"/{usr/bin,usr/share/applications}
           mkdir -p "$pkgdir"/usr/share/icons/hicolor/{32x32,128x128,256x256,512x512}/apps
@@ -211,7 +222,7 @@ jobs:
           builddate = $builddate
           packager = GitHub Actions
           size = $size
-          arch = x86_64
+          arch = $pkg_arch
           license = MIT
           depends = webkit2gtk-4.1
           depends = gtk3
@@ -220,16 +231,16 @@ jobs:
           EOF
 
           cd "$pkgdir"
-          bsdtar --format=bsdtar -cf "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar" \
+          bsdtar --format=bsdtar -cf "$GITHUB_WORKSPACE/lanzou-next-$ver-1-$pkg_arch.pkg.tar" \
             --uid=0 --gid=0 --uname=root --gname=root \
             .PKGINFO usr
-          zstd -19 -f -q "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar" \
-            -o "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar.zst"
-          rm "$GITHUB_WORKSPACE/lanzou-next-$ver-1-x86_64.pkg.tar"
+          zstd -19 -f -q "$GITHUB_WORKSPACE/lanzou-next-$ver-1-$pkg_arch.pkg.tar" \
+            -o "$GITHUB_WORKSPACE/lanzou-next-$ver-1-$pkg_arch.pkg.tar.zst"
+          rm "$GITHUB_WORKSPACE/lanzou-next-$ver-1-$pkg_arch.pkg.tar"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: Arch-x64
+          name: Arch-${{ matrix.arch }}
           path: "*.pkg.tar.zst"
           if-no-files-found: error
           retention-days: 7
