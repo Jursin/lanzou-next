@@ -3,6 +3,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider } from 'naive-ui'
 
 import { useNaiveTheme } from '@/composables/useNaiveTheme'
+import { calibrateWindowSize } from '@/composables/useWindowSize'
 import { usePreferenceStore } from '@/stores/preference'
 import UpdateCheck from '@/components/UpdateCheck.vue'
 
@@ -29,6 +30,8 @@ function onKeyDown(e: KeyboardEvent) {
 onMounted(async () => {
   window.addEventListener('contextmenu', onContextMenu)
   window.addEventListener('keydown', onKeyDown)
+  // 尽快校准窗口尺寸并显示（窗口以 visible:false 启动）
+  void calibrateWindowSize()
   try {
     await preferenceStore.load()
   } catch {

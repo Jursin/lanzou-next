@@ -20,8 +20,8 @@
         "minWidth": 960,
         "minHeight": 640,
         "resizable": true,
-        "center": true,
         "decorations": false,
+        "visible": false,
         "shadow": true,
         "devtools": true
       }

@@ -290,48 +290,59 @@ pub async fn download_and_install(
 
     #[cfg(target_os = "linux")]
     {
-        let is_appimage = std::env::var("APPIMAGE").is_ok();
-        if is_appimage {
-            let current_exe = std::env::current_exe()?;
-
-            // 直接删除旧文件并移入新文件
-            std::fs::remove_file(&current_exe)?;
-            std::fs::rename(&installer_path, &current_exe)?;
-            std::fs::set_permissions(&current_exe, std::fs::metadata(&current_exe)?.permissions())?;
-
+        if let Ok(appimage) = std::env::var("APPIMAGE") {
+            let appimage = std::path::PathBuf::from(appimage);
+            // 先把正在运行的 AppImage 改名移走（旧 inode 继续运行），释放原路径后再写入新文件
+            let backup = appimage.with_extension("AppImage.bak");
+            let _ = std::fs::remove_file(&backup);
+            std::fs::rename(&appimage, &backup)?;
+            let perms = backup.metadata()?.permissions();
+            // 新文件优先 rename（同设备原子），跨设备则回退复制
+            if std::fs::rename(&installer_path, &appimage).is_err() {
+                std::fs::copy(&installer_path, &appimage)?;
+                let _ = std::fs::remove_file(&installer_path);
+            }
+            // 恢复原始可执行权限
+            std::fs::set_permissions(&appimage, perms)?;
+            let _ = std::fs::remove_file(&backup);
             app.restart();
         } else {
-            let (cmd, args) = if installer_path
+            let ext = installer_path
                 .extension()
-                .map(|e| e == "pkg" || e == "zst")
-                .unwrap_or(false)
-            {
-                ("pkexec", vec!["--disable-internal-agent", "pacman", "-U", "--noconfirm"])
-            } else if installer_path.extension().map(|e| e == "deb").unwrap_or(false) {
-                ("pkexec", vec!["--disable-internal-agent", "dpkg", "-i"])
+                .and_then(|e| e.to_str())
+                .unwrap_or("");
+            let install_ok = if ext == "deb" {
+                let status = std::process::Command::new("pkexec")
+                    .args(["dpkg", "-i"])
+                    .arg(&installer_path)
+                    .status();
+                if status.as_ref().map(|s| !s.success()).unwrap_or(false) {
+                    let _ = std::process::Command::new("sudo")
+                        .args(["apt-get", "install", "-f", "-y"])
+                        .status();
+                }
+                status.map(|s| s.success()).unwrap_or(false)
+            } else if ext == "rpm" {
+                std::process::Command::new("pkexec")
+                    .args(["rpm", "-U"])
+                    .arg(&installer_path)
+                    .status()
+                    .map(|s| s.success())
+                    .unwrap_or(false)
             } else {
-                ("pkexec", vec!["--disable-internal-agent", "rpm", "-U"])
+                // .pkg.tar.zst
+                std::process::Command::new("pkexec")
+                    .args(["pacman", "-U", "--noconfirm"])
+                    .arg(&installer_path)
+                    .status()
+                    .map(|s| s.success())
+                    .unwrap_or(false)
             };
 
-            let mut cmd_args: Vec<String> = args.iter().map(ToString::to_string).collect();
-            cmd_args.push(installer_path.to_str().unwrap_or_default().to_string());
-
-            let install_result = std::process::Command::new(cmd)
-                .args(&cmd_args)
-                .status();
-
-            // dpkg -i 缺依赖时自动修复
-            if install_result.as_ref().map(|s| !s.success()).unwrap_or(false) {
-                let _ = std::process::Command::new(cmd)
-                    .args(["--disable-internal-agent", "apt-get", "install", "-f", "-y"])
-                    .status();
-            }
-
-            if install_result.map(|s| s.success()).unwrap_or(false) {
+            if install_ok {
                 let _ = std::fs::remove_file(&installer_path);
                 app.restart();
             }
-
             Err(AppError::Update("安装失败，请手动安装下载的包".into()))
         }
     }
@@ -393,6 +404,10 @@ fn find_platform_asset(assets: &Option<Vec<GitHubAsset>>) -> (Option<String>, Op
     {
         let is_appimage = std::env::var("APPIMAGE").is_ok();
         if is_appimage {
+            let arch = if cfg!(target_arch = "aarch64") { "aarch64" } else { "amd64" };
+            if let Some(a) = assets.iter().find(|a| a.name.contains(arch) && a.name.ends_with(".AppImage")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
             if let Some(a) = assets.iter().find(|a| a.name.ends_with(".AppImage")) {
                 return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
             }
@@ -401,15 +416,27 @@ fn find_platform_asset(assets: &Option<Vec<GitHubAsset>>) -> (Option<String>, Op
         let has_pacman = which("pacman");
         let has_dpkg = which("dpkg");
         if has_pacman {
+            let arch = if cfg!(target_arch = "aarch64") { "aarch64" } else { "x86_64" };
+            if let Some(a) = assets.iter().find(|a| a.name.contains(arch) && a.name.ends_with(".pkg.tar.zst")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
             if let Some(a) = assets.iter().find(|a| a.name.ends_with(".pkg.tar.zst")) {
                 return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
             }
         } else if has_dpkg {
+            let arch = if cfg!(target_arch = "aarch64") { "aarch64" } else { "amd64" };
+            if let Some(a) = assets.iter().find(|a| a.name.contains(arch) && a.name.ends_with(".deb")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
             if let Some(a) = assets.iter().find(|a| a.name.ends_with(".deb")) {
                 return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
             }
         } else {
             // 基于 rpm 的发行版
+            let arch = if cfg!(target_arch = "aarch64") { "aarch64" } else { "x86_64" };
+            if let Some(a) = assets.iter().find(|a| a.name.contains(arch) && a.name.ends_with(".rpm")) {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
             if let Some(a) = assets.iter().find(|a| a.name.ends_with(".rpm")) {
                 return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
             }
@@ -421,6 +448,10 @@ fn find_platform_asset(assets: &Option<Vec<GitHubAsset>>) -> (Option<String>, Op
     }
     #[cfg(target_os = "macos")]
     {
+        let arch = if cfg!(target_arch = "aarch64") { "arm64" } else { "x64" };
+        if let Some(a) = assets.iter().find(|a| a.name.contains(arch) && a.name.ends_with(".dmg")) {
+            return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+        }
         if let Some(a) = assets.iter().find(|a| a.name.ends_with(".dmg")) {
             return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
         }

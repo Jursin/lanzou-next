@@ -11,6 +11,12 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-close",
     "core:window:allow-start-dragging",
+    "core:window:allow-inner-size",
+    "core:window:allow-set-size",
+    "core:window:allow-show",
+    "core:window:allow-set-position",
+    "core:window:allow-current-monitor",
+    "core:window:allow-primary-monitor",
     "opener:default",
     {
       "identifier": "opener:allow-open-path",

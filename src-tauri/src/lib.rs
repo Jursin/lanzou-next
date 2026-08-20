@@ -36,11 +36,11 @@ fn show_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
     } else {
         let win = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
             .title("蓝奏云盘")
-            .inner_size(1200.0, 800.0)
+            .inner_size(1260.0, 800.0)
             .min_inner_size(960.0, 640.0)
             .resizable(true)
             .decorations(false)
-            .center()
+            .visible(false)
             .build()
             .expect("创建主窗口失败");
         let _ = win.set_focus();
@@ -157,10 +157,10 @@ pub fn run() {
             if let Some(ua) = ua {
                 client.set_user_agent(&ua);
             }
-            if let Some(domain) = domain {
-                if let Ok(url) = url::Url::parse(&domain) {
-                    let _ = client.set_base_url(url.as_ref());
-                }
+            if let Some(domain) = domain
+                && let Ok(url) = url::Url::parse(&domain)
+            {
+                let _ = client.set_base_url(url.as_ref());
             }
             if let Some(cookies) = cookies {
                 for c in cookies {
@@ -229,12 +229,11 @@ pub fn run() {
         .run(|app, event| {
             // 关闭时最小化到托盘：仅拦截"窗口关闭触发"的退出（code=None，非显式 app.exit）；
             // 显式退出（托盘菜单"退出"等，code=Some）直接放行
-            if let tauri::RunEvent::ExitRequested { api, code, .. } = event {
-                if code.is_none()
-                    && commands::config::read_bool(app, "minimize_to_tray_on_close", true)
-                {
-                    api.prevent_exit();
-                }
+            if let tauri::RunEvent::ExitRequested { api, code, .. } = event
+                && code.is_none()
+                && commands::config::read_bool(app, "minimize_to_tray_on_close", true)
+            {
+                api.prevent_exit();
             }
         });
 }
