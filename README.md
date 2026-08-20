@@ -182,3 +182,6 @@ cd src-tauri && cargo clippy  # Clippy (后端)
 - **使用限制**：禁止将本项目用于任何违法行为，请遵守蓝奏云服务条款及相关法律法规。
 - **责任声明**：你应了解相应的风险，因使用本项目产生的任何法律纠纷或损失，均由使用者自行承担。
 - **争议处理**：如版权方认为本项目侵犯其权益，请通过 Issues 联系，我们将积极配合处理。
+
+## 🌟 星标历史
+[![Stargazers over time](https://starcharts.vercel.app/Jursin/lanzou-next.svg?variant=adaptive)](https://starchart.cc/Jursin/lanzou-next)
