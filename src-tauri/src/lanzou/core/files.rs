@@ -21,15 +21,15 @@ pub fn lanzou_delete_local(
         remove_file_retry(&p)?;
         remove_file_retry(&PathBuf::from(format!("{path}.download")))?;
     }
-    if let (Some(d), Some(n)) = (dir, name) {
-        if !n.trim().is_empty() {
-            let base = if d.is_empty() {
-                dirs::download_dir().unwrap_or_else(std::env::temp_dir)
-            } else {
-                PathBuf::from(d)
-            };
-            remove_file_retry(&base.join(format!("{}.download", sanitize_filename::sanitize(&n))))?;
-        }
+    if let (Some(d), Some(n)) = (dir, name)
+        && !n.trim().is_empty()
+    {
+        let base = if d.is_empty() {
+            dirs::download_dir().unwrap_or_else(std::env::temp_dir)
+        } else {
+            PathBuf::from(d)
+        };
+        remove_file_retry(&base.join(format!("{}.download", sanitize_filename::sanitize(&n))))?;
     }
     Ok(())
 }

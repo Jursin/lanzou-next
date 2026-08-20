@@ -288,20 +288,17 @@ async fn probe_size(client: &LanzouClient, url: &str, referer: &str) -> Result<u
     builder = builder.header(reqwest::header::ACCEPT_ENCODING, "identity");
     builder = builder.header(reqwest::header::RANGE, "bytes=0-0");
     let response = builder.send().await?;
-    if response.status() == reqwest::StatusCode::PARTIAL_CONTENT {
-        if let Some(v) = response
+    if response.status() == reqwest::StatusCode::PARTIAL_CONTENT
+        && let Some(v) = response
             .headers()
             .get(reqwest::header::CONTENT_RANGE)
             .and_then(|v| v.to_str().ok())
-        {
-            if let Some(total) = v
-                .rsplit('/')
-                .next()
-                .and_then(|s| s.trim().parse::<u64>().ok())
-            {
-                return Ok(total);
-            }
-        }
+        && let Some(total) = v
+            .rsplit('/')
+            .next()
+            .and_then(|s| s.trim().parse::<u64>().ok())
+    {
+        return Ok(total);
     }
     Ok(response.content_length().unwrap_or(0))
 }

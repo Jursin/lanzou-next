@@ -738,7 +738,7 @@ function onRestoreDefaults() {
                 :value="preferenceStore.config.githubProxyUrl ?? ''"
                 placeholder="留空则直连 GitHub"
                 style="width: 360px"
-                @update:value="(v) => onConfigChange({ githubProxyUrl: v || undefined })"
+                @update:value="(v) => onConfigChange({ githubProxyUrl: v ?? undefined })"
               />
             </NFormItem>
             <NFormItem label="上次检查时间">

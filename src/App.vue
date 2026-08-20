@@ -30,8 +30,10 @@ function onKeyDown(e: KeyboardEvent) {
 onMounted(async () => {
   window.addEventListener('contextmenu', onContextMenu)
   window.addEventListener('keydown', onKeyDown)
-  // 尽快校准窗口尺寸并显示（窗口以 visible:false 启动）
-  void calibrateWindowSize()
+  // dev 模式下 Vite HMR 会因 setSize 触发页面重载导致黑屏，仅在生产环境校准
+  if (!import.meta.env.DEV) {
+    void calibrateWindowSize()
+  }
   try {
     await preferenceStore.load()
   } catch {

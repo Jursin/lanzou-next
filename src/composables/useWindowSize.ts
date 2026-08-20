@@ -25,8 +25,7 @@ export async function calibrateWindowSize() {
       target.height = Math.round(DESIRED_SIZE.height * ratio)
       await win.setSize(new PhysicalSize(target.width, target.height))
     }
-    const monitor =
-      (await currentMonitor()) || (await primaryMonitor())
+    const monitor = (await currentMonitor()) || (await primaryMonitor())
     if (monitor) {
       const wa = monitor.workArea
       await win.setPosition(
@@ -38,6 +37,11 @@ export async function calibrateWindowSize() {
     }
     await win.show()
   } catch {
-    /* 校准失败时按默认尺寸显示 */
+    try {
+      const win = getCurrentWindow()
+      await win.show()
+    } catch {
+      /* ignore */
+    }
   }
 }

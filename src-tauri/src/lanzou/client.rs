@@ -131,10 +131,10 @@ impl LanzouClient {
         if let Ok(value) = reqwest::header::HeaderValue::from_str(&self.user_agent) {
             headers.insert(reqwest::header::USER_AGENT, value);
         }
-        if let Some(cookie) = self.cookie_header() {
-            if let Ok(value) = reqwest::header::HeaderValue::from_str(&cookie) {
-                headers.insert(reqwest::header::COOKIE, value);
-            }
+        if let Some(cookie) = self.cookie_header()
+            && let Ok(value) = reqwest::header::HeaderValue::from_str(&cookie)
+        {
+            headers.insert(reqwest::header::COOKIE, value);
         }
         headers
     }

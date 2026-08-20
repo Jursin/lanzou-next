@@ -106,10 +106,10 @@ fn extract_file_name(html: &str) -> String {
         r#"id="filenajax">([^<]+?)</div>"#,
     ];
     for pat in patterns {
-        if let Ok(re) = regex::Regex::new(pat) {
-            if let Some(m) = re.captures(html).and_then(|c| c.get(1)) {
-                return m.as_str().trim().to_string();
-            }
+        if let Ok(re) = regex::Regex::new(pat)
+            && let Some(m) = re.captures(html).and_then(|c| c.get(1))
+        {
+            return m.as_str().trim().to_string();
         }
     }
     "未匹配到文件名".into()
@@ -122,10 +122,10 @@ fn extract_folder_name(html: &str) -> String {
         r#"var\s+.+?\s*=\s*'(.+?)';\n.+document\.title"#,
     ];
     for pat in patterns {
-        if let Ok(re) = regex::Regex::new(pat) {
-            if let Some(m) = re.captures(html).and_then(|c| c.get(1)) {
-                return m.as_str().trim().to_string();
-            }
+        if let Ok(re) = regex::Regex::new(pat)
+            && let Some(m) = re.captures(html).and_then(|c| c.get(1))
+        {
+            return m.as_str().trim().to_string();
         }
     }
     "未匹配到文件夹名".into()
@@ -203,17 +203,17 @@ fn extract_ajaxdata(html: &str) -> Option<String> {
 /// 蓝奏云接口经历过 ajaxm.php -> ajaxfile.php 变更，两者都兼容匹配
 fn extract_ajaxm_path(html: &str, fallback_base: &str) -> String {
     let re = regex::Regex::new(r#"url\s*:\s*'/(?:ajaxm|ajaxfile)\.php\?file=\d+'"#).ok();
-    if let Some(re) = re {
-        if let Some(m) = re.captures(html).and_then(|c| c.get(0)) {
-            let v = m.as_str().to_string();
-            // 取单引号内的路径部分
-            let path = v
-                .trim_start_matches("url")
-                .trim()
-                .trim_start_matches(':')
-                .trim();
-            return path.trim_matches('\'').to_string();
-        }
+    if let Some(re) = re
+        && let Some(m) = re.captures(html).and_then(|c| c.get(0))
+    {
+        let v = m.as_str().to_string();
+        // 取单引号内的路径部分
+        let path = v
+            .trim_start_matches("url")
+            .trim()
+            .trim_start_matches(':')
+            .trim();
+        return path.trim_matches('\'').to_string();
     }
     // fallback：域名根下的 ajaxfile.php（不能拼在分享文件路径段下）
     format!(

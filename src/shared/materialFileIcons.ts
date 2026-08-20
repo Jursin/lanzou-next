@@ -1,26 +1,13 @@
 import { defineComponent, h } from 'vue'
 import type { Component } from 'vue'
 
-// 使用 Vite 的 import.meta.glob 批量加载所有 SVG 为原始字符串
-const svgModules = import.meta.glob<string>('../assets/icons/*.svg', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-})
+const iconCache = new Map<string, Component>()
+const svgCache = new Map<string, string>()
 
-// 构建图标名 → SVG 内容的映射
-const iconSvgs = new Map<string, string>()
-for (const [path, svg] of Object.entries(svgModules)) {
-  const name = path.split('/').pop()?.replace('.svg', '') ?? ''
-  iconSvgs.set(name, svg)
-}
-
-// 根据图标名创建 Vue 组件（内联 SVG，保留原始配色）
-function createIconComponent(name: string): Component | null {
-  const svg = iconSvgs.get(name)
-  if (!svg) return null
+// 将 SVG 字符串包进组件
+function wrapSvg(name: string, svg: string): Component {
   return defineComponent({
-    name: `MatIcon_${name}`,
+    name: `Icon_${name}`,
     setup(_, { attrs }) {
       return () =>
         h('span', {
@@ -33,14 +20,53 @@ function createIconComponent(name: string): Component | null {
   })
 }
 
-// 预生成常用图标组件，避免重复创建
-const cache = new Map<string, Component>()
+// 回退图标
+const fallback = defineComponent({
+  name: 'Icon_fallback',
+  setup(_, { attrs }) {
+    return () =>
+      h('span', { ...attrs, style: 'display:inline-flex;line-height:0' }, '\u{1F4C4}')
+  },
+})
+
+let svgModules: Record<string, () => Promise<{ default: string }>> | null = null
+
+function initModules() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  svgModules = (import.meta as any).glob('../assets/icons/*.svg', {
+    query: '?raw',
+    import: 'default',
+    eager: false,
+  }) as Record<string, () => Promise<{ default: string }>>
+}
 
 export function getMaterialIcon(name: string): Component {
-  let comp = cache.get(name)
-  if (!comp) {
-    comp = createIconComponent(name) ?? createIconComponent('document')!
-    cache.set(name, comp)
+  const cached = iconCache.get(name)
+  if (cached) return cached
+
+  // 先从已加载的缓存取
+  const svg = svgCache.get(name)
+  if (svg) {
+    const comp = wrapSvg(name, svg)
+    iconCache.set(name, comp)
+    return comp
   }
-  return comp
+
+  // 异步加载
+  if (!svgModules) initModules()
+  if (svgModules) {
+    const key = Object.keys(svgModules).find((k) => k.endsWith(`/${name}.svg`))
+    if (key) {
+      svgModules[key]().then((mod) => {
+        svgCache.set(name, mod.default)
+        iconCache.set(name, wrapSvg(name, mod.default))
+      })
+    }
+  }
+
+  // 先返回 fallback，加载完后自动替换
+  if (!iconCache.has(name)) {
+    iconCache.set(name, fallback)
+  }
+  return iconCache.get(name)!
 }

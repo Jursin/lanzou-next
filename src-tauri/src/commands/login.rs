@@ -39,11 +39,11 @@ pub async fn lanzou_login(
 
     // 1. 获取登录页，解决 acw_sc__v2 挑战
     let (html, _) = session.get(LOGIN_URL).await?;
-    if html.contains("arg1=") {
-        if let Some(acw) = matcher::calc_acw_sc_v2(&html) {
-            session.set_cookie("acw_sc__v2", &acw);
-            let _ = session.get(LOGIN_URL).await?;
-        }
+    if html.contains("arg1=")
+        && let Some(acw) = matcher::calc_acw_sc_v2(&html)
+    {
+        session.set_cookie("acw_sc__v2", &acw);
+        let _ = session.get(LOGIN_URL).await?;
     }
 
     // 2. POST uselogin 登录
@@ -177,15 +177,15 @@ impl LoginSession<'_> {
             reqwest::header::ACCEPT_LANGUAGE,
             reqwest::header::HeaderValue::from_static("zh-CN,zh;q=0.9"),
         );
-        if let Some(c) = self.cookie_header() {
-            if let Ok(v) = reqwest::header::HeaderValue::from_str(&c) {
-                h.insert(reqwest::header::COOKIE, v);
-            }
+        if let Some(c) = self.cookie_header()
+            && let Ok(v) = reqwest::header::HeaderValue::from_str(&c)
+        {
+            h.insert(reqwest::header::COOKIE, v);
         }
-        if let Some(r) = &self.referer {
-            if let Ok(v) = reqwest::header::HeaderValue::from_str(r) {
-                h.insert(reqwest::header::REFERER, v);
-            }
+        if let Some(r) = &self.referer
+            && let Ok(v) = reqwest::header::HeaderValue::from_str(r)
+        {
+            h.insert(reqwest::header::REFERER, v);
         }
         h
     }
@@ -263,11 +263,11 @@ fn collect_js_redirects(html: &str, next: &mut Option<String>) {
         r#"<iframe[^>]*src=['"]([^'"]+)['"]"#,
     ];
     for pat in patterns {
-        if let Ok(re) = regex::Regex::new(pat) {
-            if let Some(m) = re.captures(html).and_then(|c| c.get(1)) {
-                *next = Some(m.as_str().to_string());
-                return;
-            }
+        if let Ok(re) = regex::Regex::new(pat)
+            && let Some(m) = re.captures(html).and_then(|c| c.get(1))
+        {
+            *next = Some(m.as_str().to_string());
+            return;
         }
     }
 }

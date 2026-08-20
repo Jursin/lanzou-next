@@ -65,6 +65,8 @@ pub struct AppConfig {
 fn store<R: Runtime>(
     app: &AppHandle<R>,
 ) -> Result<std::sync::Arc<tauri_plugin_store::Store<R>>, AppError> {
+    let path = app.path().app_data_dir().map_err(|e| AppError::Config(e.to_string()))?;
+    std::fs::create_dir_all(&path).map_err(|e| AppError::Config(e.to_string()))?;
     app.store(CONFIG_STORE_FILE)
         .map_err(|e| AppError::Config(e.to_string()))
 }
@@ -122,7 +124,6 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
             return Err(AppError::Config("User-Agent 不能为空".into()));
         }
         store.set("user_agent", serde_json::json!(v));
-        // 立即应用到运行中的请求客户端（此后所有请求使用新 UA）
         app.state::<AppState>()
             .client
             .lock()
@@ -158,7 +159,6 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
     }
     if let Some(v) = cfg.minimize_to_tray_on_close {
         store.set("minimize_to_tray_on_close", serde_json::json!(v));
-        // 同步托盘图标显示/隐藏
         crate::sync_tray_visibility(&app);
     }
     if let Some(v) = cfg.lightweight_mode {
@@ -182,8 +182,14 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
     if let Some(v) = cfg.last_check_update_time {
         store.set("last_check_update_time", serde_json::json!(v));
     }
-    if let Some(v) = cfg.github_proxy_url {
-        store.set("github_proxy_url", serde_json::json!(v));
+    match cfg.github_proxy_url {
+        Some(v) if !v.trim().is_empty() => {
+            store.set("github_proxy_url", serde_json::json!(v));
+        }
+        Some(_) => {
+            store.delete("github_proxy_url");
+        }
+        None => {}
     }
     store.save().map_err(|e| AppError::Config(e.to_string()))?;
     Ok(())
