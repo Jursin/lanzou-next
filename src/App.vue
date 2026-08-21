@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import { NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider } from 'naive-ui'
 
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useNaiveTheme } from '@/composables/useNaiveTheme'
 import { calibrateWindowSize } from '@/composables/useWindowSize'
 import { usePreferenceStore } from '@/stores/preference'
@@ -30,9 +31,11 @@ function onKeyDown(e: KeyboardEvent) {
 onMounted(async () => {
   window.addEventListener('contextmenu', onContextMenu)
   window.addEventListener('keydown', onKeyDown)
-  // dev 模式下 Vite HMR 会因 setSize 触发页面重载导致黑屏，仅在生产环境校准
+  // dev 模式下 Vite HMR 会因 setSize 触发页面重载导致黑屏，仅在生产环境校准尺寸
   if (!import.meta.env.DEV) {
     void calibrateWindowSize()
+  } else if ('__TAURI_INTERNALS__' in window) {
+    getCurrentWindow().show().catch(() => {})
   }
   try {
     await preferenceStore.load()
