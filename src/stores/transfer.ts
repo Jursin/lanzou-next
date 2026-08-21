@@ -68,6 +68,7 @@ export const useTransferStore = defineStore('transfer', () => {
   const runningDownloads = ref(0)
   const downloadDir = ref('')
   let listenerReady = false
+  let onUploadDoneCallback: (() => void) | null = null
 
   function persist() {
     try {
@@ -326,6 +327,11 @@ export const useTransferStore = defineStore('transfer', () => {
     if (item) item.lost = lost
   }
 
+  /** 注册上传完成回调（FilesView 用于刷新文件列表） */
+  function onUploadDone(cb: () => void) {
+    onUploadDoneCallback = cb
+  }
+
   function moveToCompleted(list: TransferItem[], item: TransferItem) {
     const idx = list.findIndex((i) => i.id === item.id)
     if (idx >= 0) list.splice(idx, 1)
@@ -393,6 +399,7 @@ export const useTransferStore = defineStore('transfer', () => {
         item.status = 'done'
         item.finishedAt = Date.now()
         moveToCompleted(uploads.value, item)
+        onUploadDoneCallback?.()
       } else if (!item.userPaused) {
         item.name = p.name
         item.uploaded = p.uploaded
@@ -421,6 +428,7 @@ export const useTransferStore = defineStore('transfer', () => {
     removeItem,
     removeCompleted,
     markLost,
+    onUploadDone,
     setupListeners,
   }
 })

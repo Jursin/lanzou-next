@@ -317,6 +317,7 @@ onMounted(async () => {
     selected.value = []
     await refresh()
   })
+  transferStore.onUploadDone(refresh)
   await loadFiles(-1)
   if ('__TAURI_INTERNALS__' in window) {
     window.addEventListener('files:refresh', refresh)
@@ -783,10 +784,22 @@ async function checkUploadWarning(): Promise<boolean> {
 }
 
 /**
- * 上传预检：所选路径存在超出账号单文件限制的文件时，按用户选择决定是否分片上传。
+ * 上传预检：校验文件类型 + 所选路径存在超出账号单文件限制的文件时，按用户选择决定是否分片上传。
  * 单文件：询问「是否分片上传？」（否=取消上传）；文件夹：询问「是否将超限文件全部分片上传？」（跳过=跳过超限文件）
  */
 async function startUploadWithPrecheck(path: string) {
+  // 文件类型校验（仅文件，文件夹由服务端逐文件校验）
+  const isFile = !path.endsWith('/') && !path.endsWith('\\') && /\.[^\\/]+$/.test(path)
+  if (isFile) {
+    const supportList = appStore.profile?.supportList
+    if (supportList?.length) {
+      const ext = path.split(/[\\/]/).pop()?.split('.').pop()?.toLowerCase()
+      if (ext && !supportList.some((s) => s.toLowerCase() === ext)) {
+        message.warning(`不支持的文件类型: .${ext}`)
+        return
+      }
+    }
+  }
   let res
   try {
     res = await lanzouUploadPrecheck(path)
