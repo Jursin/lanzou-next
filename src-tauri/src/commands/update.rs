@@ -7,6 +7,15 @@ use crate::state::AppState;
 
 pub const UPDATE_API_URL: &str = "https://api.github.com/repos/Jursin/lanzou-next/releases";
 
+/// 检测当前是否以便携模式运行（exe 旁边没有 uninstall.exe）
+#[cfg(target_os = "windows")]
+fn is_portable() -> bool {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| !d.join("uninstall.exe").exists()))
+        .unwrap_or(false)
+}
+
 /// 如果配置了 GitHub 加速地址，将加速地址拼接到下载 URL 前面
 fn apply_github_proxy<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
@@ -175,6 +184,32 @@ pub async fn download_and_install(
     // ShellExecuteW("open") + NSIS /P(静默模式) /R(安装后重启)
     #[cfg(target_os = "windows")]
     {
+        if is_portable() {
+            // 便携版：解压 zip 覆盖自身 exe 并重启
+            let exe_path = std::env::current_exe()?;
+            let exe_dir = exe_path.parent().ok_or_else(|| AppError::Update("无法获取 exe 目录".into()))?;
+
+            // 清理上次更新遗留的旧 exe
+            let _ = std::fs::remove_file(exe_dir.join("lanzou-next.exe.old"));
+
+            // 当前 exe 改名为 .old
+            std::fs::rename(&exe_path, exe_dir.join("lanzou-next.exe.old"))?;
+
+            // 用 PowerShell 解压 zip 到当前目录
+            let zip_path_str = installer_path.to_str().unwrap_or("");
+            let script = format!(
+                "Expand-Archive -Path '{zip_path_str}' -DestinationPath '{}' -Force",
+                exe_dir.display()
+            );
+            let _ = std::process::Command::new("powershell")
+                .args(["-NoProfile", "-Command", &script])
+                .status();
+
+            // 启动新 exe 并退出当前进程
+            let _ = std::process::Command::new(&exe_path).spawn();
+            std::process::exit(0);
+        }
+
         use std::ffi::OsStr;
         use std::os::windows::ffi::OsStrExt;
         use windows_sys::Win32::UI::Shell::ShellExecuteW;
@@ -390,6 +425,15 @@ fn find_platform_asset(assets: &Option<Vec<GitHubAsset>>) -> (Option<String>, Op
         } else {
             "x64"
         };
+        if is_portable() {
+            if let Some(a) = assets
+                .iter()
+                .find(|a| a.name.contains(arch) && a.name.ends_with("-portable.zip"))
+            {
+                return (Some(a.browser_download_url.clone()), Some(a.name.clone()));
+            }
+            return (None, None);
+        }
         if let Some(a) = assets
             .iter()
             .find(|a| a.name.contains(arch) && a.name.ends_with("-setup.exe"))

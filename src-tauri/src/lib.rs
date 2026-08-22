@@ -115,6 +115,16 @@ fn read_log_level() -> log::LevelFilter {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // 便携版更新后清理旧 exe
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(dir) = exe.parent() {
+                let _ = std::fs::remove_file(dir.join("lanzou-next.exe.old"));
+            }
+        }
+    }
+
     let log_level = read_log_level();
 
     tauri::Builder::default()
