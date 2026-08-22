@@ -67,6 +67,17 @@ jobs:
           else
             pnpm tauri build --bundles nsis --config '{"build":{"beforeBuildCommand":""}}'
           fi
+      - name: Package portable zip
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $target = "${{ matrix.rust_target }}"
+          $dir = if ($target) { "src-tauri/target/$target/release" } else { "src-tauri/target/release" }
+          $exe = "$dir/lanzou-next.exe"
+          if (-not (Test-Path $exe)) { Write-Error "Executable not found"; exit 1 }
+          $zip = "Lanzou-Next_${version}_${{ matrix.arch }}-portable.zip"
+          Compress-Archive -Path $exe -DestinationPath $zip -Force
+          echo "PORTABLE_ZIP=$zip" >> $env:GITHUB_ENV
       - uses: actions/upload-artifact@v7
         with:
           name: Windows-${{ matrix.arch }}
@@ -74,6 +85,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
           include-hidden-files: true
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Windows-${{ matrix.arch }}-portable
+          path: ${{ env.PORTABLE_ZIP }}
+          if-no-files-found: error
+          retention-days: 7
 
   linux:
     name: Linux ${{ matrix.arch }}
