@@ -667,13 +667,9 @@ function onRestoreDefaults() {
                   placeholder="User-Agent"
                   @blur="onUserAgentBlur"
                 />
-                <div class="ua-warn-collapse" :class="{ 'ua-warn-collapse--open': uaHasIssue }">
-                  <div class="ua-warn-collapse__inner">
-                    <div class="ua-warn-bar">
-                      <span class="ua-warn-text">检测到换行等非法字符，可能触发服务器拦截</span>
-                      <NButton size="small" type="primary" ghost @click="cleanUserAgent">清理</NButton>
-                    </div>
-                  </div>
+                <div v-if="uaHasIssue" class="ua-warn-bar">
+                  <span class="ua-warn-text">检测到换行等非法字符，可能触发服务器拦截</span>
+                  <NButton size="small" type="primary" ghost @click="cleanUserAgent">清理</NButton>
                 </div>
               </div>
             </NFormItem>
@@ -865,20 +861,6 @@ function onRestoreDefaults() {
   min-width: 260px;
 }
 
-.ua-warn-collapse {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.ua-warn-collapse--open {
-  grid-template-rows: 1fr;
-}
-
-.ua-warn-collapse__inner {
-  overflow: hidden;
-}
-
 .ua-warn-bar {
   display: flex;
   align-items: center;
@@ -886,19 +868,13 @@ function onRestoreDefaults() {
   padding: 8px 12px;
   margin-top: 6px;
   border-radius: 6px;
-  background: var(--m3-error-container);
-  opacity: 0;
-  transition: opacity 0.25s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.ua-warn-collapse--open .ua-warn-bar {
-  opacity: 1;
+  background: color-mix(in srgb, var(--m3-warning) 14%, transparent);
 }
 
 .ua-warn-text {
   flex: 1;
-  font-size: 12px;
-  color: var(--m3-on-error-container);
+  font-size: 13px;
+  color: var(--m3-on-surface);
 }
 
 .ua-preset-row {

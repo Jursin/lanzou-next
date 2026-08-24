@@ -37,11 +37,6 @@ onMounted(async () => {
   } else if ('__TAURI_INTERNALS__' in window) {
     getCurrentWindow().show().catch(() => {})
   }
-  try {
-    await preferenceStore.load()
-  } catch {
-    /* ignore */
-  }
 })
 
 onUnmounted(() => {

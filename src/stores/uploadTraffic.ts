@@ -61,12 +61,5 @@ export const useUploadTrafficStore = defineStore('uploadTraffic', () => {
     }
   }
 
-  /** 清理今天之前的历史记录 */
-  function clearHistory() {
-    const t = dateStr()
-    days.value = days.value.filter((d) => d.date === t)
-    persist()
-  }
-
-  return { days, todaySize, setRecord, clearHistory, restore }
+  return { days, todaySize, setRecord, restore }
 })

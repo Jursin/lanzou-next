@@ -2012,16 +2012,3 @@ async function doDesc() {
   pointer-events: none;
 }
 </style>
-
-<style>
-.n-dropdown-menu .dropdown-option-danger {
-  --n-option-text-color: var(--m3-error);
-  --n-option-text-color-hover: var(--m3-error);
-  --n-prefix-color: var(--m3-error);
-}
-
-.n-dropdown-menu .dropdown-option-danger .n-dropdown-option-body__prefix,
-.n-dropdown-menu .dropdown-option-danger .n-dropdown-option-body:hover .n-dropdown-option-body__prefix {
-  color: var(--m3-error) !important;
-}
-</style>
