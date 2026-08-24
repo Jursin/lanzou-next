@@ -23,7 +23,8 @@
         "decorations": false,
         "visible": false,
         "shadow": true,
-        "devtools": true
+        "devtools": true,
+        "dragDropEnabled": true
       }
     ],
     "security": {

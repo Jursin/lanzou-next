@@ -108,7 +108,9 @@ pub async fn lanzou_set_file_access(
     shownames: String,
 ) -> Result<OpResult, AppError> {
     let client = state.client.lock().await;
-    set_file_access(&client, &file_id, shows, &shownames).await
+    let result = set_file_access(&client, &file_id, shows, &shownames).await?;
+    log::info!("lanzou_set_file_access: file_id={file_id}, shows={shows}, ok={}", result.ok);
+    Ok(result)
 }
 
 /// 设置文件夹访问权限
@@ -120,7 +122,9 @@ pub async fn lanzou_set_folder_access(
     shownames: String,
 ) -> Result<OpResult, AppError> {
     let client = state.client.lock().await;
-    set_folder_access(&client, &folder_id, shows, &shownames).await
+    let result = set_folder_access(&client, &folder_id, shows, &shownames).await?;
+    log::info!("lanzou_set_folder_access: folder_id={folder_id}, shows={shows}, ok={}", result.ok);
+    Ok(result)
 }
 
 /// 文件描述详情
@@ -141,7 +145,9 @@ pub async fn lanzou_set_file_description(
     desc: String,
 ) -> Result<OpResult, AppError> {
     let client = state.client.lock().await;
-    set_file_description(&client, &file_id, &desc).await
+    let result = set_file_description(&client, &file_id, &desc).await?;
+    log::info!("lanzou_set_file_description: file_id={file_id}, ok={}", result.ok);
+    Ok(result)
 }
 
 /// 文件分享信息
@@ -151,7 +157,9 @@ pub async fn lanzou_file_detail(
     file_id: String,
 ) -> Result<ShareDetail, AppError> {
     let client = state.client.lock().await;
-    file_detail(&client, &file_id).await
+    let detail = file_detail(&client, &file_id).await?;
+    log::info!("lanzou_file_detail: file_id={file_id}");
+    Ok(detail)
 }
 
 /// 文件夹分享信息
@@ -161,7 +169,9 @@ pub async fn lanzou_folder_detail(
     folder_id: String,
 ) -> Result<ShareDetail, AppError> {
     let client = state.client.lock().await;
-    folder_detail(&client, &folder_id).await
+    let detail = folder_detail(&client, &folder_id).await?;
+    log::info!("lanzou_folder_detail: folder_id={folder_id}");
+    Ok(detail)
 }
 
 /// 列出回收站
@@ -192,5 +202,7 @@ pub async fn lanzou_recycle_action(
     action: String,
 ) -> Result<OpResult, AppError> {
     let client = state.client.lock().await;
-    recycle_action(&client, &id, &file_type, &action).await
+    let result = recycle_action(&client, &id, &file_type, &action).await?;
+    log::info!("lanzou_recycle_action: id={id}, type={file_type}, action={action}, ok={}", result.ok);
+    Ok(result)
 }

@@ -79,6 +79,8 @@ pub async fn lanzou_upload(
             .unwrap_or_default()
     });
 
+    log::info!("lanzou_upload: 开始上传 \"{name}\" ({} bytes) -> folder_id={}", total, task.folder_id);
+
     // 累计进度计数器（整个任务共享，文件/文件夹统一）
     let progress = Arc::new(AtomicU64::new(0));
     emit_progress(&app, &task.id, &name, 0, total);
@@ -160,9 +162,11 @@ pub async fn lanzou_upload(
     reporter.stop().await;
     state.finish_cancel(&task.id).await;
     if cancelled() {
+        log::info!("lanzou_upload: \"{name}\" 已取消");
         return Err(AppError::Lanzou("已取消".into()));
     }
     result?;
+    log::info!("lanzou_upload: \"{name}\" 上传完成");
     emit_progress(&app, &task.id, &name, total, total);
     Ok(())
 }
@@ -346,7 +350,8 @@ async fn upload_dir(
                     progress.clone(),
                     cancel.clone(),
                 )
-                .await?;
+                .await
+                .map(|_| ())?;
             }
         }
     }

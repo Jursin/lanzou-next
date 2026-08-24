@@ -17,7 +17,11 @@ export const usePreferenceStore = defineStore('preference', () => {
 
   async function update(patch: Partial<AppConfig>) {
     config.value = { ...config.value, ...patch }
-    await configSet(patch)
+    try {
+      await configSet(patch)
+    } catch (e) {
+      console.warn('save config failed', e)
+    }
   }
 
   return { config, downloadDir, load, update }

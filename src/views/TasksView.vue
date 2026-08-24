@@ -9,6 +9,8 @@ import {
   NIcon,
   NPagination,
   NProgress,
+  NRadioGroup,
+  NRadioButton,
   useDialog,
   useMessage,
   type DropdownOption,
@@ -130,7 +132,7 @@ function fmtSpeed(speed: number) {
 
 function fmtDuration(ms: number) {
   if (!ms || ms < 0) return '—'
-  const s = Math.floor(ms / 1000)
+  const s = Math.max(1, Math.round(ms / 1000))
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
@@ -421,16 +423,16 @@ watch(
 <template>
   <div class="tasks-view">
     <ViewHeader title="传输列表">
-      <div class="kind-switch">
-        <button type="button" class="seg-btn" :class="{ active: tab === 'upload' }" @click="switchTab('upload')">
+      <NRadioGroup :value="tab" size="small" @update:value="switchTab">
+        <NRadioButton value="upload">
           上传
           <span v-if="uploadCount" class="tasks-badge">{{ uploadCount }}</span>
-        </button>
-        <button type="button" class="seg-btn" :class="{ active: tab === 'download' }" @click="switchTab('download')">
+        </NRadioButton>
+        <NRadioButton value="download">
           下载
           <span v-if="downloadCount" class="tasks-badge">{{ downloadCount }}</span>
-        </button>
-      </div>
+        </NRadioButton>
+      </NRadioGroup>
     </ViewHeader>
     <div class="tasks-body">
       <!-- 工具栏：左侧全选 + 批量操作；右侧状态筛选 -->
@@ -466,44 +468,24 @@ watch(
           </NButton>
         </div>
         <div class="toolbar-right">
-          <div class="state-switch">
-            <button
-              type="button"
-              class="seg-btn"
-              :class="{ active: stateFilter === 'all' }"
-              @click="stateFilter = 'all'"
-            >
+          <NRadioGroup :value="stateFilter" size="small" @update:value="(v: string) => stateFilter = v as typeof stateFilter">
+            <NRadioButton value="all">
               全部
               <span v-if="allCount" class="tasks-badge">{{ allCount }}</span>
-            </button>
-            <button
-              type="button"
-              class="seg-btn"
-              :class="{ active: stateFilter === 'running' }"
-              @click="stateFilter = 'running'"
-            >
+            </NRadioButton>
+            <NRadioButton value="running">
               进行中
               <span v-if="runningCount" class="tasks-badge">{{ runningCount }}</span>
-            </button>
-            <button
-              type="button"
-              class="seg-btn"
-              :class="{ active: stateFilter === 'paused' }"
-              @click="stateFilter = 'paused'"
-            >
+            </NRadioButton>
+            <NRadioButton value="paused">
               已暂停
               <span v-if="pausedCount" class="tasks-badge">{{ pausedCount }}</span>
-            </button>
-            <button
-              type="button"
-              class="seg-btn"
-              :class="{ active: stateFilter === 'done' }"
-              @click="stateFilter = 'done'"
-            >
+            </NRadioButton>
+            <NRadioButton value="done">
               已完成
               <span v-if="doneCount" class="tasks-badge">{{ doneCount }}</span>
-            </button>
-          </div>
+            </NRadioButton>
+          </NRadioGroup>
         </div>
       </div>
 
@@ -627,42 +609,6 @@ watch(
 </template>
 
 <style scoped>
-.kind-switch,
-.state-switch {
-  display: inline-flex;
-  background: var(--m3-surface-container-highest);
-  border-radius: 8px;
-  padding: 2px;
-  gap: 2px;
-}
-
-.seg-btn {
-  padding: 4px 14px;
-  font-size: 13px;
-  color: var(--m3-on-surface-variant);
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
-}
-
-.seg-btn:hover {
-  color: var(--m3-on-surface);
-}
-
-.seg-btn.active {
-  background: var(--m3-surface-container-lowest);
-  color: var(--m3-primary);
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
 .tasks-badge {
   min-width: 16px;
   height: 16px;

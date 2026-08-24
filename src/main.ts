@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useAppStore } from './stores/app'
+import { usePreferenceStore } from './stores/preference'
 import { useTransferStore } from './stores/transfer'
 import { useUploadTrafficStore } from './stores/uploadTraffic'
 
@@ -17,10 +18,12 @@ app.use(createPinia())
 app.use(router)
 
 const appStore = useAppStore()
+const preferenceStore = usePreferenceStore()
 const transferStore = useTransferStore()
 const trafficStore = useUploadTrafficStore()
 
 async function bootstrap() {
+  await preferenceStore.load()
   await appStore.loadConfig()
   app.mount('#app')
   trafficStore.restore()

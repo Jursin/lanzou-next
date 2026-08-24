@@ -23,6 +23,7 @@ pub async fn lanzou_login(
     username: String,
     password: String,
 ) -> Result<crate::commands::lanzou::Profile, AppError> {
+    log::info!("lanzou_login: 用户 {username} 开始登录");
     // 使用独立 client 完成登录流程，避免污染共享 client
     // 禁用自动重定向，手动跟进以收集每一步 Set-Cookie
     let client = Client::builder()
@@ -59,6 +60,7 @@ pub async fn lanzou_login(
     let zt = login_json["zt"].as_i64().unwrap_or(0);
     if zt != 1 {
         let msg = login_json["msgs"].as_str().unwrap_or("登录失败");
+        log::warn!("lanzou_login: 登录失败 - {msg}");
         return Err(AppError::Lanzou(msg.to_string()));
     }
     let redirect = login_json["msgs"].as_str().unwrap_or_default().to_string();
@@ -294,6 +296,7 @@ pub async fn lanzou_logout(
     app: AppHandle,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), AppError> {
+    log::info!("lanzou_logout: 用户退出登录");
     {
         let client = state.client.lock().await;
         client.clear_cookies();

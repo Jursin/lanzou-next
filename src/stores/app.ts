@@ -4,10 +4,12 @@ import { defineStore } from 'pinia'
 import { listen } from '@tauri-apps/api/event'
 
 import type { Profile, ThemeSource } from '@/shared/types'
-import { configGet, configSet, lanzouLogin, lanzouLogout, lanzouProfile } from '@/shared/api'
+import { lanzouLogin, lanzouLogout, lanzouProfile } from '@/shared/api'
 import { applyColorScheme, DEFAULT_COLOR_SCHEME } from '@/shared/colorScheme'
+import { usePreferenceStore } from '@/stores/preference'
 
 export const useAppStore = defineStore('app', () => {
+  const preferenceStore = usePreferenceStore()
   const themeSource = ref<ThemeSource>('auto')
   const colorScheme = ref(DEFAULT_COLOR_SCHEME)
   const isLoggedIn = ref(false)
@@ -44,7 +46,7 @@ export const useAppStore = defineStore('app', () => {
 
   async function loadConfig() {
     try {
-      const cfg = await configGet()
+      const cfg = preferenceStore.config
       if (cfg.themeSource) themeSource.value = cfg.themeSource
       if (cfg.colorScheme) colorScheme.value = cfg.colorScheme
       if (cfg.cookies?.length) isLoggedIn.value = true
@@ -59,7 +61,7 @@ export const useAppStore = defineStore('app', () => {
     themeSource.value = value
     applyTheme()
     try {
-      await configSet({ themeSource: value })
+      await preferenceStore.update({ themeSource: value })
     } catch (e) {
       console.warn('save theme failed', e)
     }
@@ -69,7 +71,7 @@ export const useAppStore = defineStore('app', () => {
     colorScheme.value = value
     applyTheme()
     try {
-      await configSet({ colorScheme: value })
+      await preferenceStore.update({ colorScheme: value })
     } catch (e) {
       console.warn('save color scheme failed', e)
     }

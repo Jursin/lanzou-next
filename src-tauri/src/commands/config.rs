@@ -109,15 +109,44 @@ pub fn config_get(app: AppHandle) -> Result<AppConfig, AppError> {
     })
 }
 
+/// 逐字段写入 store：字段为 Some 时写入，None 时跳过；同时收集变更的键名
+macro_rules! set_if_some {
+    ($store:expr, $cfg:expr, { $($key:expr => $field:ident),* $(,)? }, $changed:expr) => {
+        $(
+            if let Some(v) = $cfg.$field {
+                $store.set($key, serde_json::json!(v));
+                $changed.push($key);
+            }
+        )*
+    };
+}
+
 #[tauri::command]
 pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> {
     let store = store(&app)?;
-    if let Some(v) = cfg.lanzou_url {
-        store.set("lanzou_url", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.domain {
-        store.set("domain", serde_json::json!(v));
-    }
+    let mut changed = Vec::new();
+
+    // 简单字段：直接写入 store
+    set_if_some!(store, cfg, {
+        "lanzou_url" => lanzou_url,
+        "domain" => domain,
+        "cookies" => cookies,
+        "download_dir" => download_dir,
+        "set_default_download_dir" => set_default_download_dir,
+        "theme_source" => theme_source,
+        "color_scheme" => color_scheme,
+        "upload_max" => upload_max,
+        "download_max" => download_max,
+        "upload_warning_size" => upload_warning_size,
+        "split_size" => split_size,
+        "lightweight_mode" => lightweight_mode,
+        "dev_tools" => dev_tools,
+        "auto_check_update" => auto_check_update,
+        "beta_update" => beta_update,
+        "last_check_update_time" => last_check_update_time,
+    }, changed);
+
+    // 需要特殊处理的字段
     if let Some(v) = cfg.user_agent {
         let v = v.trim().to_string();
         if v.is_empty() {
@@ -129,67 +158,34 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
             .lock()
             .await
             .set_user_agent(&v);
-    }
-    if let Some(v) = cfg.cookies {
-        store.set("cookies", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.download_dir {
-        store.set("download_dir", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.set_default_download_dir {
-        store.set("set_default_download_dir", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.theme_source {
-        store.set("theme_source", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.color_scheme {
-        store.set("color_scheme", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.upload_max {
-        store.set("upload_max", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.download_max {
-        store.set("download_max", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.upload_warning_size {
-        store.set("upload_warning_size", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.split_size {
-        store.set("split_size", serde_json::json!(v));
+        changed.push("user_agent");
     }
     if let Some(v) = cfg.minimize_to_tray_on_close {
         store.set("minimize_to_tray_on_close", serde_json::json!(v));
         crate::sync_tray_visibility(&app);
+        changed.push("minimize_to_tray_on_close");
     }
-    if let Some(v) = cfg.lightweight_mode {
-        store.set("lightweight_mode", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.dev_tools {
-        store.set("dev_tools", serde_json::json!(v));
+    match cfg.github_proxy_url {
+        Some(v) if !v.trim().is_empty() => {
+            store.set("github_proxy_url", serde_json::json!(v));
+            changed.push("github_proxy_url");
+        }
+        Some(_) => {
+            store.delete("github_proxy_url");
+            changed.push("github_proxy_url");
+        }
+        None => {}
     }
     if let Some(v) = cfg.log_level {
         if !crate::log_policy::valid_log_level(&v) {
             return Err(AppError::Config(format!("无效的日志级别: {v}")));
         }
         store.set("log_level", serde_json::json!(v));
+        changed.push("log_level");
     }
-    if let Some(v) = cfg.auto_check_update {
-        store.set("auto_check_update", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.beta_update {
-        store.set("beta_update", serde_json::json!(v));
-    }
-    if let Some(v) = cfg.last_check_update_time {
-        store.set("last_check_update_time", serde_json::json!(v));
-    }
-    match cfg.github_proxy_url {
-        Some(v) if !v.trim().is_empty() => {
-            store.set("github_proxy_url", serde_json::json!(v));
-        }
-        Some(_) => {
-            store.delete("github_proxy_url");
-        }
-        None => {}
+
+    if !changed.is_empty() {
+        log::info!("config_set: 更新 {}", changed.join(", "));
     }
     store.save().map_err(|e| AppError::Config(e.to_string()))?;
     Ok(())
@@ -231,7 +227,7 @@ fn write_defaults<R: Runtime>(
         minimize_to_tray_on_close: Some(true),
         lightweight_mode: Some(true),
         dev_tools: Some(false),
-        log_level: Some("warn".into()),
+        log_level: Some("info".into()),
         auto_check_update: Some(true),
         beta_update: Some(false),
         last_check_update_time: None,

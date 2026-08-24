@@ -546,32 +546,38 @@ function onRestoreDefaults() {
             <NFormItem label="同时上传数">
               <NInputNumber
                 v-model:value="uploadMax"
+                button-placement="both"
                 :min="1"
                 :max="3"
                 placeholder="请输入"
                 class="pref-number"
                 @update:value="onUploadMax"
+                @keydown.enter="$event.target.blur()"
               />
             </NFormItem>
             <NFormItem label="同时下载数">
               <NInputNumber
                 v-model:value="downloadMax"
+                button-placement="both"
                 :min="1"
                 :max="5"
                 placeholder="请输入"
                 class="pref-number"
                 @update:value="onDownloadMax"
+                @keydown.enter="$event.target.blur()"
               />
             </NFormItem>
             <NFormItem label="上传流量警戒">
               <div class="pref-inline-row">
                 <NInputNumber
                   v-model:value="uploadWarningSize"
+                  button-placement="both"
                   :min="1"
                   :max="1024"
                   placeholder="请输入"
                   class="pref-number"
                   @update:value="onWarningSize"
+                  @keydown.enter="$event.target.blur()"
                 />
                 <span class="pref-inline-row__meta">GB</span>
                 <span class="pref-inline-row__meta pref-inline-row__meta--muted"
@@ -582,6 +588,7 @@ function onRestoreDefaults() {
             <NFormItem label="文件分片大小">
               <div class="pref-inline-row">
                 <NInputNumber
+                  button-placement="both"
                   :key="splitInputKey"
                   :value="splitSize"
                   :min="1"
@@ -591,6 +598,7 @@ function onRestoreDefaults() {
                   @update:value="onSplitInput"
                   @focus="onSplitFocus"
                   @blur="onSplitBlur"
+                  @keydown.enter="$event.target.blur()"
                 />
                 <span class="pref-inline-row__meta">MB</span>
                 <span class="pref-inline-row__meta pref-inline-row__meta--muted">不应超过账号限制</span>
@@ -739,6 +747,7 @@ function onRestoreDefaults() {
                 placeholder="留空则直连 GitHub"
                 style="width: 360px"
                 @update:value="(v) => onConfigChange({ githubProxyUrl: v ?? undefined })"
+                @keydown.enter="($event.target as HTMLInputElement)?.blur()"
               />
             </NFormItem>
             <NFormItem label="上次检查时间">
@@ -897,5 +906,9 @@ function onRestoreDefaults() {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.pref-number :deep(.n-input__input-el) {
+  text-align: center;
 }
 </style>

@@ -112,8 +112,12 @@ onUnmounted(() => {
     <!-- 下载进度 -->
     <template v-else-if="phase === 'downloading'">
       <div class="update-progress-wrap">
-        <NProgress type="line" :percentage="percent" :show-indicator="false" processing
-          rail-color="var(--m3-surface-container-highest)" rail-style="border-radius: 6px;" :height="8" />
+        <NProgress
+          type="line"
+          indicator-placement="inside"
+          :percentage="percent"
+          color="var(--m3-primary)"
+        />
         <span class="update-progress-meta">{{ progressText }}</span>
       </div>
     </template>

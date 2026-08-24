@@ -110,7 +110,7 @@ fn read_log_level() -> log::LevelFilter {
         let level = json.get("log_level")?.as_str()?;
         Some(log_policy::log_level_filter(level))
     })()
-    .unwrap_or(log::LevelFilter::Warn)
+    .unwrap_or(log::LevelFilter::Info)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -157,7 +157,15 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(AppState::default())
-        .setup(|app| {
+        .setup(move |app| {
+            // 启动日志 banner
+            log::info!(
+                "lanzou-next v{} start ({}|{}) log_level={}",
+                env!("CARGO_PKG_VERSION"),
+                std::env::consts::OS,
+                std::env::consts::ARCH,
+                log_level
+            );
             // 首次运行写入默认配置
             commands::config::ensure_defaults(app.handle());
             // 启动时恢复登录会话（domain + user-agent + cookies）

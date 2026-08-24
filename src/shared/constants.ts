@@ -48,7 +48,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   minimizeToTrayOnClose: true,
   lightweightMode: true,
   devTools: false,
-  logLevel: 'warn',
+  logLevel: 'info',
   autoCheckUpdate: true,
   betaUpdate: false,
 }

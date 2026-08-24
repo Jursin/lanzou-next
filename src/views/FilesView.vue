@@ -12,7 +12,10 @@ import {
   NPagination,
   NSpin,
   NSwitch,
+  NText,
   NTree,
+  NBreadcrumb,
+  NBreadcrumbItem,
   useDialog,
   useMessage,
   type DropdownOption,
@@ -24,10 +27,11 @@ import {
   CaretDownOutline,
   CloudDownloadOutline,
   CloudUploadOutline,
-  CopyOutline,
+  DocumentsOutline,
   CreateOutline,
+  DocumentOutline,
   DocumentTextOutline,
-  FolderOpenOutline,
+  FolderOutline,
   KeyOutline,
   LinkOutline,
   MoveOutline,
@@ -183,6 +187,22 @@ const dropdownPos = ref({ x: 0, y: 0 })
 const dropdownShow = ref(false)
 const contextFile = ref<LsFile | null>(null)
 const dragging = ref(false)
+let unlistenDrop: Promise<() => void> | null = null
+/** 上传完成后需删除的旧文件（上传任务 ID → 旧文件） */
+const overwriteDeleteMap = new Map<string, LsFile>()
+
+// 上传下拉菜单
+const uploadDropdownShow = ref(false)
+const uploadDropdownOptions: DropdownOption[] = [
+  { label: '选择文件', key: 'file', icon: () => h(NIcon, null, { default: () => h(DocumentOutline) }) },
+  { label: '选择文件夹', key: 'folder', icon: () => h(NIcon, null, { default: () => h(FolderOutline) }) },
+]
+
+function onUploadSelect(key: string) {
+  uploadDropdownShow.value = false
+  if (key === 'file') pickFiles()
+  else if (key === 'folder') pickFolder()
+}
 
 // 新建文件夹
 const showMkdir = ref(false)
@@ -212,12 +232,13 @@ const showMove = ref(false)
 const moveTreeData = ref<TreeOption[]>([])
 const moveSelectedKey = ref<number | null>(null)
 const moveLoadingKeys = ref<number[]>([])
+const moveExpandedKeys = ref<number[]>([])
 // 添加描述
 const showDesc = ref(false)
 const descFile = ref<LsFile | null>(null)
 const descText = ref('')
 
-const currentFolderName = filesStore.crumbs[filesStore.crumbs.length - 1]?.name || '根目录'
+const currentFolderName = computed(() => filesStore.crumbs[filesStore.crumbs.length - 1]?.name || '根目录')
 
 // 排序状态
 const sortKey = ref<'name' | 'size' | 'time' | 'downloads' | null>(null)
@@ -317,13 +338,33 @@ onMounted(async () => {
     selected.value = []
     await refresh()
   })
-  transferStore.onUploadDone(refresh)
+  transferStore.onUploadDone(async (id) => {
+    await refresh()
+    const oldFile = overwriteDeleteMap.get(id)
+    if (oldFile) {
+      overwriteDeleteMap.delete(id)
+      startFileDelete([oldFile])
+    }
+  })
   await loadFiles(-1)
   if ('__TAURI_INTERNALS__' in window) {
     window.addEventListener('files:refresh', refresh)
-    window.addEventListener('dragenter', onDragEnter)
-    window.addEventListener('dragleave', onDragLeave)
-    window.addEventListener('drop', onWindowDrop)
+    const { getCurrentWebview } = await import('@tauri-apps/api/webview')
+    const webview = getCurrentWebview()
+    unlistenDrop = webview.onDragDropEvent((event) => {
+      if (event.payload.type === 'enter') {
+        if (moveIds.value.length) return
+        dragging.value = true
+      } else if (event.payload.type === 'leave') {
+        dragging.value = false
+      } else if (event.payload.type === 'drop') {
+        dragging.value = false
+        const paths = event.payload.paths
+        if (paths?.length) {
+          handleDroppedPaths(paths)
+        }
+      }
+    })
   }
   window.addEventListener('mousemove', onWindowMouseMove)
   await nextTick()
@@ -335,29 +376,42 @@ onUnmounted(() => {
   setRecycleDeleteFinish(null)
   setFileDeleteFinish(null)
   window.removeEventListener('files:refresh', refresh)
-  window.removeEventListener('dragenter', onDragEnter)
-  window.removeEventListener('dragleave', onDragLeave)
-  window.removeEventListener('drop', onWindowDrop)
+  unlistenDrop?.then((fn) => fn())
   window.removeEventListener('mousemove', onWindowMouseMove)
   destroySortable()
 })
 
-function onDragEnter(e: DragEvent) {
-  if (moveIds.value.length) return
-  if (e.dataTransfer?.types.includes('Files')) {
-    dragging.value = true
+async function handleDroppedPaths(paths: string[]) {
+  if (!appStore.isLoggedIn) {
+    message.warning('请先登录')
+    return
   }
-}
-function onDragLeave(e: DragEvent) {
-  if (e.target === e.currentTarget || e.dataTransfer?.types.includes('Files')) {
-    dragging.value = false
-  }
-}
-function onWindowDrop(e: DragEvent) {
-  dragging.value = false
-  const files = e.dataTransfer?.files
-  if (files?.length) {
-    onDropUpload(Array.from(files))
+  if (!(await checkUploadWarning())) return
+  if (!paths.length) return
+
+  const names = paths.map((p) => p.split(/[\\/]/).pop() || p)
+  const nameList = names.join('\n')
+  const confirmed = await new Promise<boolean>((resolve) => {
+    dialog.info({
+      title: '确认上传',
+      content: () => h('div', null, [
+        h('div', { style: 'margin-bottom: 8px;' }, `确定上传以下 ${paths.length} 个项目吗？`),
+        h('div', {
+          style: 'max-height: 200px; overflow-y: auto; font-size: 12px; color: var(--m3-on-surface-variant); background: var(--m3-surface-container-highest); padding: 8px; border-radius: 6px; white-space: pre-wrap;',
+        }, nameList),
+      ]),
+      positiveText: '上传',
+      negativeText: '取消',
+      transformOrigin: 'center',
+      onPositiveClick: () => resolve(true),
+      onNegativeClick: () => resolve(false),
+      onClose: () => resolve(false),
+    })
+  })
+  if (!confirmed) return
+
+  for (const path of paths) {
+    await startUploadWithPrecheck(path)
   }
 }
 
@@ -742,9 +796,10 @@ async function pickFolder() {
   }
 }
 
-async function startUpload(path: string, chunkOversized?: boolean) {
+async function startUpload(path: string, chunkOversized?: boolean, overwriteFile?: LsFile) {
   const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   const name = path.split(/[\\/]/).pop() || path
+  if (overwriteFile) overwriteDeleteMap.set(id, overwriteFile)
   const item = {
     id,
     name,
@@ -788,8 +843,30 @@ async function checkUploadWarning(): Promise<boolean> {
  * 单文件：询问「是否分片上传？」（否=取消上传）；文件夹：询问「是否将超限文件全部分片上传？」（跳过=跳过超限文件）
  */
 async function startUploadWithPrecheck(path: string) {
+  const fileName = path.split(/[\\/]/).pop() || path
+  const duplicate = filesStore.files.find((f) => f.name === fileName)
+
+  // 文件重名：弹窗确认
+  if (duplicate && duplicate.type === 'file') {
+    const confirmed = await new Promise<boolean>((resolve) => {
+      dialog.warning({
+        title: '文件已存在',
+        content: `当前目录已存在同名文件「${fileName}」，是否覆盖？`,
+        positiveText: '覆盖',
+        negativeText: '跳过',
+        transformOrigin: 'center',
+        onPositiveClick: () => resolve(true),
+        onNegativeClick: () => resolve(false),
+        onClose: () => resolve(false),
+      })
+    })
+    if (!confirmed) return
+    await startUpload(path, false, duplicate)
+    return
+  }
+
   // 文件类型校验（仅文件，文件夹由服务端逐文件校验）
-  const isFile = !path.endsWith('/') && !path.endsWith('\\') && /\.[^\\/]+$/.test(path)
+  const isFile = /\.[^\\/]+$/.test(path)
   if (isFile) {
     const supportList = appStore.profile?.supportList
     if (supportList?.length) {
@@ -842,20 +919,6 @@ async function startUploadWithPrecheck(path: string) {
       })
     })
     await startUpload(path, chunkAll)
-  }
-}
-
-async function onDropUpload(files: File[]) {
-  if (!appStore.isLoggedIn) {
-    message.warning('请先登录')
-    return
-  }
-  if (!(await checkUploadWarning())) return
-  for (const f of files) {
-    const file = f as File & { path?: string }
-    if (file.path) {
-      await startUploadWithPrecheck(file.path)
-    }
   }
 }
 
@@ -955,6 +1018,7 @@ async function doSetAccess() {
     message.success('设置成功')
     showAccess.value = false
     selected.value = []
+    await refresh()
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
   } finally {
@@ -1070,7 +1134,31 @@ async function openMoveDialog(files: LsFile[]) {
     const children = await loadMoveChildren(-1)
     moveTreeData.value[0].children = children
     moveTreeData.value[0].isLeaf = children.length === 0
-    moveSelectedKey.value = null
+
+    // 自动展开到当前文件夹
+    const crumbs = filesStore.crumbs
+    const expanded: number[] = [-1]
+    let currentNode = moveTreeData.value[0]
+    // 从 index 1 开始（跳过根目录），逐层加载并展开
+    for (let i = 1; i < crumbs.length; i++) {
+      const id = Number(crumbs[i].id)
+      expanded.push(id)
+      // 如果子节点还没加载，先加载
+      if (!currentNode.children?.length) {
+        const kids = await loadMoveChildren(id)
+        currentNode.children = kids
+        currentNode.isLeaf = kids.length === 0
+      }
+      const found = currentNode.children?.find((c) => c.key === id)
+      if (found) {
+        currentNode = found
+      } else {
+        break
+      }
+    }
+    moveExpandedKeys.value = expanded
+    // 选中当前文件夹
+    moveSelectedKey.value = Number(crumbs[crumbs.length - 1].id)
     showMove.value = true
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
@@ -1285,22 +1373,22 @@ async function doDesc() {
             </NButton>
           </template>
           <template v-else-if="!selected.length">
-            <NButton size="small" type="primary" :disabled="!appStore.isLoggedIn" @click="pickFiles">
-              <template #icon>
-                <NIcon>
-                  <CloudUploadOutline />
-                </NIcon>
-              </template>
-              上传文件
-            </NButton>
-            <NButton size="small" :disabled="!appStore.isLoggedIn" @click="pickFolder">
-              <template #icon>
-                <NIcon>
-                  <FolderOpenOutline />
-                </NIcon>
-              </template>
-              上传文件夹
-            </NButton>
+            <NDropdown
+              v-model:show="uploadDropdownShow"
+              :options="uploadDropdownOptions"
+              :disabled="!appStore.isLoggedIn"
+              trigger="click"
+              @select="onUploadSelect"
+            >
+              <NButton size="small" type="primary" :disabled="!appStore.isLoggedIn">
+                <template #icon>
+                  <NIcon>
+                    <CloudUploadOutline />
+                  </NIcon>
+                </template>
+                上传
+              </NButton>
+            </NDropdown>
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="showMkdir = true">
               <template #icon>
                 <NIcon>
@@ -1338,7 +1426,7 @@ async function doDesc() {
             <NButton v-if="mergeGroup" size="small" :disabled="!appStore.isLoggedIn" @click="doMergeDownload">
               <template #icon>
                 <NIcon>
-                  <CopyOutline />
+                  <DocumentsOutline />
                 </NIcon>
               </template>
               合并下载
@@ -1370,22 +1458,27 @@ async function doDesc() {
         </div>
       </div>
       <div class="toolbar-row toolbar-row-bottom">
-        <div class="breadcrumb">
+        <NBreadcrumb class="breadcrumb">
           <template v-if="recycleMode">
-            <a class="crumb" @click="backToRecycleRoot">回收站</a>
-            <template v-if="recycleFolderView">
-              <span class="crumb-sep">/</span>
-              <span class="crumb current">{{ recycleFolderView.name }}</span>
-            </template>
+            <NBreadcrumbItem @click="backToRecycleRoot">回收站</NBreadcrumbItem>
+            <NBreadcrumbItem v-if="recycleFolderView" :clickable="false">
+              {{ recycleFolderView.name }}
+            </NBreadcrumbItem>
           </template>
           <template v-else>
             <template v-for="(c, i) in filesStore.crumbs" :key="c.id">
-              <a v-if="i < filesStore.crumbs.length - 1" class="crumb" @click="goCrumbs(i)">{{ c.name }}</a>
-              <span v-else class="crumb current">{{ c.name }}</span>
-              <span v-if="i < filesStore.crumbs.length - 1" class="crumb-sep">/</span>
+              <NBreadcrumbItem
+                v-if="i < filesStore.crumbs.length - 1"
+                @click="goCrumbs(i)"
+              >
+                {{ c.name }}
+              </NBreadcrumbItem>
+              <NBreadcrumbItem v-else :clickable="false">
+                {{ c.name }}
+              </NBreadcrumbItem>
             </template>
           </template>
-        </div>
+        </NBreadcrumb>
       </div>
     </div>
 
@@ -1427,8 +1520,14 @@ async function doDesc() {
                   <NCheckbox :checked="recycleAllSelected" />
                 </span>
                 <span class="col-name">
-                  文件名
-                  <span class="file-count">(共{{ filteredRecycleItems.length }}项)</span>
+                  <template v-if="recycleSelected.length > 0">
+                    <span class="selection-info">已选择{{ recycleSelected.length }}项 </span>
+                    <span class="selection-deselect" @click.stop="recycleSelected = []">取消选择</span>
+                  </template>
+                  <template v-else>
+                    文件名
+                    <span class="file-count">(共{{ filteredRecycleItems.length }}项)</span>
+                  </template>
                 </span>
                 <span class="col-size">大小</span>
                 <span class="col-time">时间</span>
@@ -1451,7 +1550,7 @@ async function doDesc() {
                       :size="18"
                       :color="item.type === 'folder' ? 'var(--m3-primary)' : getFileIconColor(item.name)"
                     >
-                      <component :is="item.type === 'folder' ? FolderOpenOutline : getFileIconComponent(item.name)" />
+                      <component :is="item.type === 'folder' ? FolderOutline : getFileIconComponent(item.name)" />
                     </NIcon>
                     <span class="file-name">{{ item.name }}</span>
                   </span>
@@ -1476,16 +1575,22 @@ async function doDesc() {
                 <NCheckbox :checked="allSelected" />
               </span>
               <span class="col-name sortable" @click="toggleSort('name')">
-                文件名
-                <span class="file-count">(共{{ filesStore.files.length }}项)</span>
-                <span class="sort-arrows" :class="sortArrowClass('name')">
-                  <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'name' && sortAsc }">
-                    <CaretUpOutline />
-                  </NIcon>
-                  <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'name' && !sortAsc }">
-                    <CaretDownOutline />
-                  </NIcon>
-                </span>
+                <template v-if="selected.length > 0">
+                  <span class="selection-info">已选择{{ selected.length }}项 </span>
+                  <span class="selection-deselect" @click.stop="selected = []">取消选择</span>
+                </template>
+                <template v-else>
+                  文件名
+                  <span class="file-count">(共{{ filesStore.files.length }}项)</span>
+                  <span class="sort-arrows" :class="sortArrowClass('name')">
+                    <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'name' && sortAsc }">
+                      <CaretUpOutline />
+                    </NIcon>
+                    <NIcon :size="12" class="sort-down" :class="{ on: sortKey === 'name' && !sortAsc }">
+                      <CaretDownOutline />
+                    </NIcon>
+                  </span>
+                </template>
               </span>
               <span class="col-size sortable" @click="toggleSort('size')">
                 大小
@@ -1544,7 +1649,7 @@ async function doDesc() {
                     :size="18"
                     :color="file.type === 'folder' ? 'var(--m3-primary)' : getFileIconColor(file.name)"
                   >
-                    <component :is="file.type === 'folder' ? FolderOpenOutline : getFileIconComponent(file.name)" />
+                    <component :is="file.type === 'folder' ? FolderOutline : getFileIconComponent(file.name)" />
                   </NIcon>
                   <span class="file-name">{{ file.name }}</span>
                 </span>
@@ -1559,15 +1664,16 @@ async function doDesc() {
           </div>
         </template>
       </NSpin>
-    </div>
-
-    <!-- 拖拽上传遮罩 -->
-    <div v-if="dragging" class="upload-mask">
-      <div class="upload-mask-inner">
-        <NIcon :size="48">
-          <CloudUploadOutline />
-        </NIcon>
-        <p>上传到: {{ currentFolderName }}</p>
+      <!-- 拖拽上传覆盖层（仅覆盖文件列表区域） -->
+      <div v-if="dragging && !recycleMode" class="upload-drop-backdrop">
+        <div class="upload-drop-hint">
+          <NIcon :size="40" :depth="3">
+            <CloudUploadOutline />
+          </NIcon>
+          <NText style="font-size: 14px;">
+            拖拽文件到此处上传到: {{ currentFolderName }}
+          </NText>
+        </div>
       </div>
     </div>
 
@@ -1599,7 +1705,7 @@ async function doDesc() {
       transform-origin="center"
       @positive-click="doMkdir"
     >
-      <NInput v-model:value="newFolderName" placeholder="文件夹名称" />
+      <NInput v-model:value="newFolderName" placeholder="文件夹名称" @keydown.enter="doMkdir" />
     </NModal>
 
     <!-- 重命名 -->
@@ -1612,7 +1718,7 @@ async function doDesc() {
       transform-origin="center"
       @positive-click="doRename"
     >
-      <NInput v-model:value="renameName" placeholder="新名称" />
+      <NInput v-model:value="renameName" placeholder="新名称" @keydown.enter="doRename" />
     </NModal>
 
     <!-- 设置访问密码 -->
@@ -1631,7 +1737,7 @@ async function doDesc() {
           <span class="access-label">访问密码</span>
           <NSwitch v-model:value="accessShows" size="small" />
         </div>
-        <NInput v-if="accessShows" v-model:value="accessPwd" placeholder="请输入访问密码" maxlength="6" show-count />
+        <NInput v-if="accessShows" v-model:value="accessPwd" placeholder="请输入访问密码" maxlength="6" show-count @keydown.enter="doSetAccess" />
         <p v-if="accessShows && !accessPwdValid" class="access-hint">密码需为 2-6 位且不能包含空格</p>
       </div>
     </NModal>
@@ -1664,10 +1770,13 @@ async function doDesc() {
         <NTree
           :data="moveTreeData"
           :selected-keys="moveSelectedKey === null ? [] : [moveSelectedKey]"
+          :expanded-keys="moveExpandedKeys"
           :loading-keys="moveLoadingKeys"
           selectable
           block-line
+          :render-prefix="() => h(NIcon, { size: 18, color: 'var(--m3-primary)' }, { default: () => h(FolderOutline) })"
           @update:selected-keys="onMoveSelect"
+          @update:expanded-keys="(keys: Array<number | string>) => moveExpandedKeys = keys as number[]"
           @load="onMoveLoad"
         />
       </div>
@@ -1716,43 +1825,9 @@ async function doDesc() {
   gap: 12px;
 }
 
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.crumb {
-  cursor: pointer;
-  color: var(--m3-on-surface-variant);
-  font-size: 13px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  transition:
-    background-color 0.15s,
-    color 0.15s;
-}
-
-.crumb:hover {
-  color: var(--m3-primary);
-  background-color: var(--m3-surface-container-highest);
-}
-
-.crumb.current {
-  color: var(--m3-on-surface);
-  font-weight: 500;
-}
-
-.crumb-sep {
-  color: var(--m3-outline-variant);
-}
-
 .toolbar-search {
   flex: 1;
-  max-width: 250px;
+  max-width: 300px;
   transition: max-width 0.25s ease;
 }
 
@@ -1771,6 +1846,13 @@ async function doDesc() {
   align-items: center;
 }
 
+.files-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .files-body :deep(.n-spin-container),
 .files-body :deep(.n-spin-content) {
   height: 100%;
@@ -1780,6 +1862,29 @@ async function doDesc() {
 
 .files-empty {
   margin-top: 60px;
+}
+
+.upload-drop-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  background: color-mix(in srgb, var(--m3-surface) 60%, transparent);
+  display: flex;
+  padding: 0;
+}
+
+.upload-drop-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--m3-on-surface-variant);
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.3px dashed var(--m3-outline);
+  border-radius: 6px;
 }
 
 .file-row.folder:hover::before {
@@ -1902,56 +2007,9 @@ async function doDesc() {
   overflow: auto;
 }
 
-.move-tree :deep(.n-tree-node-switcher) {
-  height: var(--n-node-content-height);
-  align-items: center;
-  justify-content: center;
-}
-
-.move-tree :deep(.n-tree-node-switcher .n-tree-node-switcher__icon) {
-  height: 20px;
-  width: 20px;
-  font-size: 20px;
-  align-items: center;
-  justify-content: center;
-  display: flex;
-}
-
-.move-tree :deep(.n-tree-node-content) {
-  border-radius: 6px;
-}
-
-.move-tree :deep(.n-tree-node) {
-  border-radius: 6px;
-}
-
-.upload-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: color-mix(in srgb, var(--m3-primary) 10%, transparent);
-}
-
 .files-body.moving :deep(.n-spin-content) {
   opacity: 0.5;
   pointer-events: none;
-}
-
-.upload-mask-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: var(--m3-primary);
-  font-size: 16px;
-  padding: 40px 60px;
-  border: 2px dashed var(--m3-primary);
-  border-radius: 16px;
-  background: var(--m3-surface-container-lowest);
 }
 </style>
 

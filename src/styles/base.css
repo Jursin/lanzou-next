@@ -193,3 +193,20 @@ a {
   color: var(--m3-on-surface-variant);
   flex-shrink: 0;
 }
+
+.selection-info {
+  color: var(--m3-on-surface-variant);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.selection-deselect {
+  color: var(--m3-primary);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.selection-deselect:hover {
+  opacity: 0.7;
+}

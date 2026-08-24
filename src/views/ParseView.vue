@@ -276,8 +276,14 @@ function downloadSelected() {
                 <NCheckbox :checked="allSelected" />
               </span>
               <span class="col-name">
-                文件名
-                <span class="file-count">(共{{ filteredFiles.length }}项)</span>
+                <template v-if="selected.length > 0">
+                  <span class="selection-info">已选择{{ selected.length }}项 </span>
+                  <span class="selection-deselect" @click.stop="selected = []">取消选择</span>
+                </template>
+                <template v-else>
+                  文件名
+                  <span class="file-count">(共{{ filteredFiles.length }}项)</span>
+                </template>
               </span>
               <span class="col-size">大小</span>
               <span class="col-time">时间</span>

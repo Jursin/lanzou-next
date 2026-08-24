@@ -69,6 +69,7 @@ pub async fn check_for_update(
     beta: Option<bool>,
 ) -> Result<Option<UpdateInfo>, AppError> {
     let include_prerelease = beta.unwrap_or(false);
+    log::info!("check_for_update: 开始检查 (beta={include_prerelease})");
     let url = apply_github_proxy(&app, &format!("{UPDATE_API_URL}?per_page=100"))?;
     let http = reqwest::Client::builder()
         .user_agent(crate::lanzou::client::DEFAULT_USER_AGENT)
@@ -92,8 +93,10 @@ pub async fn check_for_update(
     };
     let current = env!("CARGO_PKG_VERSION");
     if compare_version(&release.tag_name, current) <= 0 {
+        log::info!("check_for_update: 已是最新版本 (v{current})");
         return Ok(None);
     }
+    log::info!("check_for_update: 发现新版本 {}", release.tag_name);
     Ok(Some(release.clone().into_info()))
 }
 
@@ -103,6 +106,7 @@ pub async fn download_and_install(
     state: State<'_, AppState>,
     info: UpdateInfo,
 ) -> Result<(), AppError> {
+    log::info!("download_and_install: 开始下载 v{}", info.version);
     // 重置取消标志必须在发起请求之前，否则会覆盖用户刚发出的取消请求
     state
         .update_cancel
