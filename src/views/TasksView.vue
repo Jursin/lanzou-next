@@ -610,15 +610,27 @@ watch(
 
 <style scoped>
 .tasks-badge {
-  min-width: 16px;
-  height: 16px;
   padding: 0 5px;
+  margin-left: 4px;
   border-radius: 8px;
   font-size: 11px;
-  line-height: 16px;
-  text-align: center;
   background: color-mix(in srgb, var(--m3-primary) 16%, transparent);
   color: var(--m3-primary);
+  border: 1px solid color-mix(in srgb, var(--m3-primary) 30%, transparent);
+  position: relative;
+  z-index: 2;
+}
+
+:root[data-theme='dark'] .tasks-badge {
+  background: var(--m3-surface-container-highest);
+  color: var(--m3-primary);
+  border-color: var(--m3-outline-variant);
+}
+
+:root[data-theme='dark'] .n-radio-button--checked .tasks-badge {
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .tasks-toolbar {

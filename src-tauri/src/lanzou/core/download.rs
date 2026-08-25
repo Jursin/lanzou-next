@@ -102,12 +102,14 @@ pub async fn download_url(
         match download_url_attempt(app, state, client, task).await {
             Ok(()) => return Ok(()),
             Err(AppError::Http(e)) if attempt < 2 && is_transient(&e) => {
+                let delay_ms = 500 * (1u64 << attempt); // 500ms, 1000ms
                 log::warn!(
-                    "download_url[{}]: 尝试 {}/2 失败: {e}，稍后续传重试",
+                    "download_url[{}]: 尝试 {}/2 失败: {e}，{}ms 后续传重试",
                     task.id,
-                    attempt + 1
+                    attempt + 1,
+                    delay_ms
                 );
-                tokio::time::sleep(std::time::Duration::from_millis(500 * (attempt + 1))).await;
+                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
             }
             Err(e) => {
                 // 清理取消标志（成功/"已取消"路径由内层清理，其余由这里兜底）

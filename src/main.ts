@@ -27,6 +27,11 @@ async function bootstrap() {
   await appStore.loadConfig()
   app.mount('#app')
   trafficStore.restore()
+
+  if (import.meta.env.DEV) {
+    Object.assign(window, { __app: appStore, __preference: preferenceStore })
+  }
+
   if ('__TAURI_INTERNALS__' in window) {
     await appStore.setupLoginListener()
     await transferStore.init()

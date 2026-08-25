@@ -33,7 +33,7 @@ import {
   DocumentTextOutline,
   FolderOutline,
   KeyOutline,
-  LinkOutline,
+  ArrowRedoOutline,
   MoveOutline,
   RefreshOutline,
   SearchOutline,
@@ -732,7 +732,7 @@ const contextOptions: DropdownOption[] = [
   { label: '下载', key: 'download', icon: () => h(NIcon, null, { default: () => h(CloudDownloadOutline) }) },
   { label: '移动', key: 'move', icon: () => h(NIcon, null, { default: () => h(MoveOutline) }) },
   { label: '重命名', key: 'rename', icon: () => h(NIcon, null, { default: () => h(CreateOutline) }) },
-  { label: '分享', key: 'share', icon: () => h(NIcon, null, { default: () => h(LinkOutline) }) },
+  { label: '分享', key: 'share', icon: () => h(NIcon, null, { default: () => h(ArrowRedoOutline) }) },
   { label: '设置密码', key: 'access', icon: () => h(NIcon, null, { default: () => h(KeyOutline) }) },
   { label: '添加描述', key: 'desc', icon: () => h(NIcon, null, { default: () => h(DocumentTextOutline) }) },
   {
@@ -1416,7 +1416,7 @@ async function doDesc() {
             <NButton size="small" :disabled="!appStore.isLoggedIn" @click="doShare">
               <template #icon>
                 <NIcon>
-                  <LinkOutline />
+                  <ArrowRedoOutline />
                 </NIcon>
               </template>
               分享 ({{ selected.length }})

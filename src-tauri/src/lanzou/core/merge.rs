@@ -201,13 +201,14 @@ pub async fn merge_download(
                 Err(_) if cancelled() => return Err(AppError::Lanzou("已取消".into())),
                 Err(e) if attempt < 2 => {
                     attempt += 1;
+                    let delay_ms = 1200 * (attempt as u64);
                     log::warn!(
-                        "merge_download[{}]: 分片 {} 第 {attempt} 次失败: {e}，重试",
+                        "merge_download[{}]: 分片 {} 第 {attempt} 次失败: {e}，{}ms 后重试",
                         task.id,
-                        rp.part.name
+                        rp.part.name,
+                        delay_ms
                     );
-                    tokio::time::sleep(std::time::Duration::from_millis(1200 * attempt as u64))
-                        .await;
+                    tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                 }
                 Err(e) => return Err(e),
             }

@@ -33,7 +33,7 @@ import {
   LogOutOutline,
   RefreshOutline,
   RocketOutline,
-  AlertCircleOutline,
+  ReaderOutline,
   TrashOutline,
 } from '@vicons/ionicons5'
 import ViewHeader from '@/components/layout/ViewHeader.vue'
@@ -711,18 +711,6 @@ function onRestoreDefaults() {
                 @update:value="(v) => onConfigChange({ devTools: v })"
               />
             </NFormItem>
-            <NFormItem label="配置">
-              <div class="pref-inline-row">
-                <NButton type="error" ghost size="small" @click="onRestoreDefaults">
-                  <template #icon>
-                    <NIcon>
-                      <RefreshOutline />
-                    </NIcon>
-                  </template>
-                  恢复默认设置
-                </NButton>
-              </div>
-            </NFormItem>
 
             <NDivider title-placement="left">更新</NDivider>
             <NFormItem label="启动时检查更新">
@@ -748,6 +736,10 @@ function onRestoreDefaults() {
             </NFormItem>
             <NFormItem label="上次检查时间">
               <div class="pref-inline-row">
+                <span>{{ lastCheckTimeText }}</span>
+              </div>
+            </NFormItem>
+            <NFormItem label=" ">
                 <NButton size="small" @click="manualCheck">
                   <template #icon>
                     <NIcon :size="14">
@@ -756,8 +748,6 @@ function onRestoreDefaults() {
                   </template>
                   立即检查
                 </NButton>
-                <span>{{ lastCheckTimeText }}</span>
-              </div>
             </NFormItem>
 
             <NDivider title-placement="left">关于</NDivider>
@@ -780,10 +770,20 @@ function onRestoreDefaults() {
               <NButton size="small" @click="showDisclaimer">
                 <template #icon>
                   <NIcon :size="14">
-                    <AlertCircleOutline />
+                    <ReaderOutline />
                   </NIcon>
                 </template>
                 点击查看
+              </NButton>
+            </NFormItem>
+            <NFormItem label="">
+              <NButton type="error" ghost size="small" @click="onRestoreDefaults">
+                <template #icon>
+                  <NIcon>
+                    <RefreshOutline />
+                  </NIcon>
+                </template>
+                恢复默认设置
               </NButton>
             </NFormItem>
           </NForm>

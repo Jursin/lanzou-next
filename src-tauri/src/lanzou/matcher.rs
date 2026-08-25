@@ -112,8 +112,9 @@ pub struct FolderAjaxParams {
 pub fn match_folder_ajax(html: &str) -> Result<FolderAjaxParams, AppError> {
     // 变量名可能带下划线前缀（如 _hbg1i），不能只用 [0-9a-z]
     let lx = match_one(html, r"'lx'\s*:\s*'?(\d)'?")?;
-    let t = match_one(html, r"var\s+[0-9a-z_]{6}\s*=\s*'(\d{10})'")?;
-    let k = match_one(html, r"var\s+[0-9a-z_]{6}\s*=\s*'([0-9a-z]{15,})'")?;
+    // t = 时间戳（纯数字，10-11位）；k = 密钥（至少含一个字母，避免与 t 重复匹配）
+    let t = match_one(html, r"var\s+[0-9a-z_]{3,12}\s*=\s*'(\d{10,11})'")?;
+    let k = match_one(html, r"var\s+[0-9a-z_]{3,12}\s*=\s*'([0-9a-z]*[a-z][0-9a-z]*)'")?;
     let fid = match_one(html, r"'fid'\s*:\s*'?(\d+)'?")?;
     Ok(FolderAjaxParams { lx, t, k, fid })
 }
@@ -211,5 +212,19 @@ mod tests {
         assert_eq!(p.t, "1234567890");
         assert_eq!(p.k, "abc123def456ghi789jkl012");
         assert_eq!(p.fid, "12345");
+    }
+
+    #[test]
+    fn test_match_folder_ajax_short_var() {
+        // 变量名长度不固定（3-12位）
+        let html = r#"
+            'lx':'1',
+            var abc = '1234567890';
+            var defg = 'abcdefghijklmnop';
+            'fid':'12345',
+        "#;
+        let p = match_folder_ajax(html).expect("should parse folder params with short var names");
+        assert_eq!(p.t, "1234567890");
+        assert_eq!(p.k, "abcdefghijklmnop");
     }
 }

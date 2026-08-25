@@ -176,9 +176,41 @@ impl LoginSession<'_> {
             reqwest::header::HeaderValue::from_static(DEFAULT_USER_AGENT),
         );
         h.insert(
-            reqwest::header::ACCEPT_LANGUAGE,
-            reqwest::header::HeaderValue::from_static("zh-CN,zh;q=0.9"),
+            reqwest::header::ACCEPT,
+            reqwest::header::HeaderValue::from_static(
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            ),
         );
+        h.insert(
+            reqwest::header::ACCEPT_LANGUAGE,
+            reqwest::header::HeaderValue::from_static("zh-CN,zh;q=0.9,zh-TW;q=0.8"),
+        );
+        h.insert(
+            reqwest::header::PRAGMA,
+            reqwest::header::HeaderValue::from_static("no-cache"),
+        );
+        h.insert(
+            reqwest::header::CACHE_CONTROL,
+            reqwest::header::HeaderValue::from_static("no-cache"),
+        );
+        h.insert(
+            reqwest::header::HeaderName::from_static("upgrade-insecure-requests"),
+            reqwest::header::HeaderValue::from_static("1"),
+        );
+        h.insert(
+            reqwest::header::HeaderName::from_static("sec-fetch-dest"),
+            reqwest::header::HeaderValue::from_static("document"),
+        );
+        h.insert(
+            reqwest::header::HeaderName::from_static("sec-fetch-mode"),
+            reqwest::header::HeaderValue::from_static("navigate"),
+        );
+        h.insert(
+            reqwest::header::HeaderName::from_static("sec-fetch-site"),
+            reqwest::header::HeaderValue::from_static("same-origin"),
+        );
+        // Chromium Client Hints
+        Self::apply_chromium_hints(&mut h);
         if let Some(c) = self.cookie_header()
             && let Ok(v) = reqwest::header::HeaderValue::from_str(&c)
         {
@@ -190,6 +222,22 @@ impl LoginSession<'_> {
             h.insert(reqwest::header::REFERER, v);
         }
         h
+    }
+
+    fn apply_chromium_hints(headers: &mut reqwest::header::HeaderMap) {
+        let insert =
+            |headers: &mut reqwest::header::HeaderMap, name: &'static str, value: String| {
+                if let Ok(v) = reqwest::header::HeaderValue::from_str(&value) {
+                    headers.insert(reqwest::header::HeaderName::from_static(name), v);
+                }
+            };
+        insert(
+            headers,
+            "sec-ch-ua",
+            r#""Chromium";v="147", "Google Chrome";v="147", "Not)A;Brand";v="24""#.into(),
+        );
+        insert(headers, "sec-ch-ua-mobile", "?0".into());
+        insert(headers, "sec-ch-ua-platform", r#""Windows""#.into());
     }
 
     async fn get(&mut self, url: &str) -> Result<(String, Option<String>), AppError> {

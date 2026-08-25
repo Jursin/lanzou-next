@@ -115,6 +115,10 @@ impl LanzouClient {
             reqwest::header::HeaderValue::from_static("1"),
         );
         headers.insert(
+            reqwest::header::HeaderName::from_static("dnt"),
+            reqwest::header::HeaderValue::from_static("1"),
+        );
+        headers.insert(
             reqwest::header::HeaderName::from_static("sec-fetch-dest"),
             reqwest::header::HeaderValue::from_static("empty"),
         );
