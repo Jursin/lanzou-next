@@ -42,6 +42,7 @@ import {
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import Sortable from 'sortablejs'
 import type { SortableEvent } from 'sortablejs'
+import QRCode from 'qrcode'
 
 import ViewHeader from '@/components/layout/ViewHeader.vue'
 import { useRecycleDelete, setRecycleDeleteFinish, setFileDeleteFinish } from '@/composables/useRecycleDelete'
@@ -227,6 +228,7 @@ const accessPwdValid = computed(() => /^\S{2,6}$/.test(accessPwd.value))
 // 分享链接
 const showShareLink = ref(false)
 const shareLinks = ref('')
+const shareQrCodes = ref<{ url: string; name: string; dataUrl: string }[]>([])
 // 移动
 const showMove = ref(false)
 const moveTreeData = ref<TreeOption[]>([])
@@ -978,19 +980,31 @@ async function doShare() {
   const files = selected.value.length ? selected.value : contextFile.value ? [contextFile.value] : filesStore.files
   if (!files.length) return
   const lines: string[] = []
+  const qrItems: { url: string; name: string }[] = []
   moving.value = true
   try {
     for (const f of files) {
       const detail = f.type === 'folder' ? await lanzouFolderDetail(f.id) : await lanzouFileDetail(f.id)
       const link = `${detail.url || ''}${detail.pwd ? ` 密码:${detail.pwd}` : ''}`
       lines.push(`${f.name} ${link}`)
+      if (detail.url) {
+        qrItems.push({ url: detail.url, name: f.name })
+      }
     }
     shareLinks.value = lines.join('\n')
+    // 生成二维码
+    const qrCodes = await Promise.all(
+      qrItems.map((item) =>
+        QRCode.toDataURL(item.url, {
+          width: 190,
+          margin: 2,
+          color: { dark: '#3f3f3f', light: '#ffffff' },
+          errorCorrectionLevel: 'H',
+        }).then((dataUrl) => ({ url: item.url, name: item.name, dataUrl })),
+      ),
+    )
+    shareQrCodes.value = qrCodes
     showShareLink.value = true
-    if ('__TAURI_INTERNALS__' in window) {
-      navigator.clipboard.writeText(shareLinks.value)
-      message.success('分享链接已复制')
-    }
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
   } finally {
@@ -1753,6 +1767,11 @@ async function doDesc() {
       :on-positive-click="copyShare"
     >
       <div class="share-links">{{ shareLinks }}</div>
+      <div v-if="shareQrCodes.length" class="share-qrcodes">
+        <div v-for="item in shareQrCodes" :key="item.url" class="share-qrcode-item">
+          <img :src="item.dataUrl" :alt="item.name" width="190" height="190" />
+        </div>
+      </div>
     </NModal>
 
     <!-- 移动（树形文件夹选择） -->
@@ -2000,6 +2019,26 @@ async function doDesc() {
   line-height: 1.6;
   max-height: 300px;
   overflow: auto;
+}
+
+.share-qrcodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  justify-content: center;
+}
+
+.share-qrcode-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.share-qrcode-item img {
+  border: 1px solid var(--n-border-color, #eee);
+  border-radius: 4px;
 }
 
 .move-tree {
