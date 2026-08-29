@@ -1,6 +1,6 @@
 [package]
 name = "lanzou-next"
-version = "1.0.7"
+version = "1.0.8"
 description = "蓝奏云客户端"
 authors = ["lanzou-next"]
 edition = "2024"

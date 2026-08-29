@@ -21,6 +21,7 @@ export default defineConfig(async () => ({
 
   clearScreen: false,
   build: {
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks: {
