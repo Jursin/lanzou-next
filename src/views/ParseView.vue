@@ -2,14 +2,16 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 
 import { NButton, NCheckbox, NEmpty, NIcon, NInput, NPagination, NSpin, useMessage } from 'naive-ui'
-import { CloudDownloadOutline, SearchOutline } from '@vicons/ionicons5'
+import { CloudDownloadOutline, SearchOutline, TimeOutline, TrashOutline, CopyOutline } from '@vicons/ionicons5'
 
 import ViewHeader from '@/components/layout/ViewHeader.vue'
 import { useTransferStore } from '@/stores/transfer'
+import { usePreferenceStore } from '@/stores/preference'
 import { lanzouShareFolder, lanzouShareInfo } from '@/shared/api'
 import { getFileIconColor, getFileIconComponent } from '@/shared/fileIcons'
 import { expandRangeSelection } from '@/shared/util'
 import { useRoute } from 'vue-router'
+import { skipClipboardCheck } from '@/composables/useClipboardCheck'
 
 interface ParseFile {
   name: string
@@ -19,8 +21,17 @@ interface ParseFile {
   pwd?: string
 }
 
+interface ParseRecord {
+  title: string
+  url: string
+  pwd: string
+  time: number
+}
+
+const HISTORY_KEY = 'lanzou.parseHistory'
 const message = useMessage()
 const transferStore = useTransferStore()
+const preferenceStore = usePreferenceStore()
 const route = useRoute()
 
 const url = ref('')
@@ -35,6 +46,115 @@ const shareTitle = ref('')
 // 搜索
 const searchQuery = ref('')
 const searchDebounceTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+// 解析记录
+const showHistory = ref(false)
+const history = ref<ParseRecord[]>([])
+const historySelected = ref<string[]>([])
+const historySearchQuery = ref('')
+
+const filteredHistory = computed(() => {
+  const q = historySearchQuery.value.toLowerCase()
+  if (!q) return history.value
+  return history.value.filter((r) => r.title.toLowerCase().includes(q) || r.url.toLowerCase().includes(q) || r.pwd?.toLowerCase().includes(q))
+})
+
+// 解析记录分页
+const historyPage = ref(1)
+const HISTORY_PAGE_SIZE = 20
+const historyTotalPages = computed(() => Math.max(1, Math.ceil(filteredHistory.value.length / HISTORY_PAGE_SIZE)))
+const pageHistory = computed(() => {
+  const start = (historyPage.value - 1) * HISTORY_PAGE_SIZE
+  return filteredHistory.value.slice(start, start + HISTORY_PAGE_SIZE)
+})
+watch(filteredHistory, () => { historyPage.value = 1 })
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY)
+    history.value = raw ? JSON.parse(raw) : []
+  } catch {
+    history.value = []
+  }
+}
+
+function saveHistory(record: ParseRecord) {
+  // 去重：相同 URL 只保留最新一条
+  const filtered = history.value.filter((r) => r.url !== record.url)
+  filtered.unshift(record)
+  const limit = preferenceStore.config.parseHistoryLimit ?? 50
+  if (limit > 0 && filtered.length > limit) filtered.length = limit
+  history.value = filtered
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(filtered))
+}
+
+function removeHistory(url: string) {
+  history.value = history.value.filter((r) => r.url !== url)
+  historySelected.value = historySelected.value.filter((u) => u !== url)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.value))
+}
+
+function toggleHistorySelect(url: string) {
+  const idx = historySelected.value.indexOf(url)
+  if (idx >= 0) historySelected.value.splice(idx, 1)
+  else historySelected.value.push(url)
+}
+
+function isHistorySelected(url: string) {
+  return historySelected.value.includes(url)
+}
+
+const allHistorySelected = computed(() => filteredHistory.value.length > 0 && filteredHistory.value.every((r) => isHistorySelected(r.url)))
+
+function toggleSelectAllHistory() {
+  if (allHistorySelected.value) {
+    historySelected.value = []
+  } else {
+    historySelected.value = filteredHistory.value.map((r) => r.url)
+  }
+}
+
+function deleteSelectedHistory() {
+  if (!historySelected.value.length) return
+  history.value = history.value.filter((r) => !historySelected.value.includes(r.url))
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.value))
+  historySelected.value = []
+}
+
+function formatRecord(record: ParseRecord) {
+  return record.pwd ? `${record.title} ${record.url} 密码:${record.pwd}` : `${record.title} ${record.url}`
+}
+
+async function copyHistory(record: ParseRecord) {
+  try {
+    await navigator.clipboard.writeText(formatRecord(record))
+    skipClipboardCheck()
+    message.success('已复制')
+  } catch {
+    message.error('复制失败')
+  }
+}
+
+async function copySelectedHistory() {
+  if (!historySelected.value.length) return
+  const text = history.value
+    .filter((r) => historySelected.value.includes(r.url))
+    .map(formatRecord)
+    .join('\n')
+  try {
+    await navigator.clipboard.writeText(text)
+    skipClipboardCheck()
+    message.success(`已复制 ${historySelected.value.length} 条`)
+  } catch {
+    message.error('复制失败')
+  }
+}
+
+function viewHistory(record: ParseRecord) {
+  url.value = record.url
+  pwd.value = record.pwd
+  showHistory.value = false
+  void parse()
+}
 
 function onSearchInput(value: string) {
   if (searchDebounceTimer.value) clearTimeout(searchDebounceTimer.value)
@@ -59,6 +179,7 @@ function syncScrollbarGutter() {
 }
 onMounted(() => {
   nextTick(syncScrollbarGutter)
+  loadHistory()
   // 从路由查询参数填充（剪贴板跳转）
   const qUrl = route.query.url
   const qPwd = route.query.pwd
@@ -173,7 +294,11 @@ async function parse() {
         pwd: pwd.value || undefined,
       }))
     }
-    if (!files.value.length) message.info('未解析到文件')
+    if (!files.value.length) {
+      message.info('未解析到文件')
+    } else {
+      saveHistory({ title: share.name, url: inputUrl, pwd: pwd.value || '', time: Date.now() })
+    }
   } catch (e) {
     message.error(e instanceof Error ? e.message : String(e))
   } finally {
@@ -223,109 +348,199 @@ function downloadSelected() {
     <ViewHeader title="解析 URL" />
     <div class="parse-body">
       <div class="parse-form">
-        <NInput
-          v-model:value="url"
-          placeholder="粘贴分享文本，回车自动填充链接与密码"
-          @keydown.enter.prevent="handleEnter"
-        />
-        <div class="form-row">
+        <div class="parse-input-row">
+          <NInput
+            v-model:value="url"
+            placeholder="粘贴分享文本，回车自动填充链接与密码"
+            clearable
+            @keydown.enter.prevent="handleEnter"
+          />
           <NInput
             v-model:value="pwd"
             placeholder="密码（可选）"
-            style="width: 220px"
+            clearable
+            style="width: 120px"
             @keydown.enter.prevent="handleEnter"
           />
-          <NButton type="primary" :loading="loading" @click="parse">
+          <NButton title="解析" type="primary" :loading="loading" @click="parse" :disabled="!url.trim()">
             <template #icon>
               <NIcon>
                 <SearchOutline />
               </NIcon>
             </template>
-            解析
           </NButton>
-        </div>
-      </div>
-
-      <div v-if="files.length" class="parse-bar">
-        <span class="parse-count" :title="shareTitle">{{ shareTitle || '文件列表' }}</span>
-        <div class="parse-bar-actions">
-          <NInput
-            v-model:value="searchQuery"
-            @update:value="onSearchInput"
-            placeholder="搜索文件名..."
-            size="small"
-            clearable
-            @clear="clearSearch"
-            style="width: 250px"
-          >
-            <template #prefix>
-              <NIcon :size="16">
-                <SearchOutline />
-              </NIcon>
-            </template>
-          </NInput>
-          <NButton type="primary" size="small" :disabled="!selected.length" @click="downloadSelected">
+          <NButton title="解析记录" :class="{ 'history-active': showHistory }" @click="showHistory = !showHistory">
             <template #icon>
               <NIcon>
-                <CloudDownloadOutline />
+                <TimeOutline />
               </NIcon>
             </template>
-            下载 ({{ selected.length }})
           </NButton>
         </div>
       </div>
 
+      <!-- 解析记录 / 解析文件列表共用区域 -->
       <div class="parse-list-wrap">
-        <NSpin :show="loading">
-          <div v-if="!loading && files.length === 0" class="parse-empty">
-            <NEmpty description="解析后显示文件列表" />
-          </div>
-          <div v-else class="parse-table">
-            <div class="file-row file-head">
-              <span class="col-check" @click.stop="toggleSelectAll">
-                <NCheckbox :checked="allSelected" />
-              </span>
-              <span class="col-name">
-                <template v-if="selected.length > 0">
-                  <span class="selection-info">已选择{{ selected.length }}项 </span>
-                  <span class="selection-deselect" @click.stop="selected = []">取消选择</span>
+        <!-- 解析记录 -->
+        <template v-if="showHistory">
+          <div class="parse-bar">
+            <span class="parse-count">解析记录</span>
+            <div class="parse-bar-actions">
+              <NInput
+                v-model:value="historySearchQuery"
+                placeholder="搜索记录..."
+                size="small"
+                clearable
+                :disabled="!history.length"
+                style="width: 300px"
+              >
+                <template #prefix>
+                  <NIcon :size="16"><SearchOutline /></NIcon>
                 </template>
-                <template v-else>
-                  文件名
-                  <span class="file-count">(共{{ filteredFiles.length }}项)</span>
-                </template>
-              </span>
-              <span class="col-size">大小</span>
-              <span class="col-time">时间</span>
-              <span class="col-action">操作</span>
+              </NInput>
+              <NButton size="small" :disabled="!historySelected.length" @click="copySelectedHistory">
+                <template #icon><NIcon><CopyOutline /></NIcon></template>
+                复制 ({{ historySelected.length }})
+              </NButton>
+              <NButton size="small" type="error" :disabled="!historySelected.length" @click="deleteSelectedHistory">
+                <template #icon><NIcon><TrashOutline /></NIcon></template>
+                删除 ({{ historySelected.length }})
+              </NButton>
             </div>
-            <div class="parse-scroll" ref="scrollEl">
-              <div v-for="f in pageFiles" :key="f.url" class="file-row" :class="{ selected: isSelected(f) }">
-                <span class="col-check" @click.stop="onCheckClick(f, $event)">
-                  <NCheckbox :checked="isSelected(f)" />
+          </div>
+          <div v-if="!history.length" class="parse-empty">
+            <NEmpty description="暂无记录" />
+          </div>
+          <template v-else>
+            <div v-if="!filteredHistory.length" class="parse-empty">
+              <NEmpty description="无匹配记录" />
+            </div>
+            <div v-else class="parse-table">
+              <div class="file-row file-head">
+                <span class="col-check" @click.stop="toggleSelectAllHistory">
+                  <NCheckbox :checked="allHistorySelected" />
                 </span>
                 <span class="col-name">
-                  <NIcon class="file-icon" :size="18" :color="getFileIconColor(f.name)">
-                    <component :is="getFileIconComponent(f.name)" />
-                  </NIcon>
-                  <span class="file-name" :title="f.name">{{ f.name }}</span>
+                  <template v-if="historySelected.length > 0">
+                    <span class="selection-info">已选择{{ historySelected.length }}项 </span>
+                    <span class="selection-deselect" @click.stop="historySelected = []">取消选择</span>
+                  </template>
+                  <template v-else>标题</template>
                 </span>
-                <span class="col-size">{{ f.size || '—' }}</span>
-                <span class="col-time">{{ f.time || '—' }}</span>
-                <span class="col-action" @click.stop>
-                  <NButton size="small" text title="下载" @click="addToDownloads([f])">
-                    <NIcon :size="20">
-                      <CloudDownloadOutline />
+                <span class="col-link">链接</span>
+                <span class="col-pwd">密码</span>
+                <span class="col-action">操作</span>
+              </div>
+              <div class="parse-scroll">
+                <div v-for="record in pageHistory" :key="record.url" class="file-row" :class="{ selected: isHistorySelected(record.url) }">
+                  <span class="col-check" @click.stop="toggleHistorySelect(record.url)">
+                    <NCheckbox :checked="isHistorySelected(record.url)" />
+                  </span>
+                  <span class="col-name">
+                    <NIcon class="file-icon" :size="18" color="var(--m3-primary)">
+                      <TimeOutline />
                     </NIcon>
-                  </NButton>
-                </span>
+                    <span class="file-name" :title="record.title">{{ record.title }}</span>
+                  </span>
+                  <span class="col-link" :title="record.url">{{ record.url }}</span>
+                  <span class="col-pwd">{{ record.pwd || '—' }}</span>
+                  <span class="col-action" @click.stop>
+                    <NButton size="small" text title="查看" @click="viewHistory(record)">
+                      <NIcon :size="20"><SearchOutline /></NIcon>
+                    </NButton>
+                    <NButton size="small" text title="复制链接" @click="copyHistory(record)">
+                      <NIcon :size="20"><CopyOutline /></NIcon>
+                    </NButton>
+                    <NButton size="small" text type="error" title="删除" @click="removeHistory(record.url)">
+                      <NIcon :size="20"><TrashOutline /></NIcon>
+                    </NButton>
+                  </span>
+                </div>
               </div>
             </div>
+            <div v-if="historyTotalPages > 1" class="files-pager">
+              <NPagination v-model:page="historyPage" :page-count="historyTotalPages" />
+            </div>
+          </template>
+        </template>
+
+        <!-- 文件列表 -->
+        <template v-else>
+          <div class="parse-bar">
+            <span class="parse-count" :title="shareTitle">{{ shareTitle || '文件列表' }}</span>
+            <div class="parse-bar-actions">
+              <NInput
+                v-model:value="searchQuery"
+                @update:value="onSearchInput"
+                placeholder="搜索文件名..."
+                size="small"
+                clearable
+                :disabled="!files.length"
+                @clear="clearSearch"
+                style="width: 300px"
+              >
+                <template #prefix>
+                  <NIcon :size="16">
+                    <SearchOutline />
+                  </NIcon>
+                </template>
+              </NInput>
+              <NButton size="small" type="primary" :disabled="!selected.length" @click="downloadSelected">
+                <template #icon>
+                  <NIcon><CloudDownloadOutline /></NIcon>
+                </template>
+                下载 ({{ selected.length }})
+              </NButton>
+            </div>
           </div>
-        </NSpin>
-        <div v-if="totalPages > 1" class="files-pager">
-          <NPagination v-model:page="page" :page-count="totalPages" />
-        </div>
+          <NSpin :show="loading">
+            <div v-if="!loading && files.length === 0" class="parse-empty">
+              <NEmpty description="解析后显示文件列表" />
+            </div>
+            <div v-else class="parse-table">
+              <div class="file-row file-head">
+                <span class="col-check" @click.stop="toggleSelectAll">
+                  <NCheckbox :checked="allSelected" />
+                </span>
+                <span class="col-name">
+                  <template v-if="selected.length > 0">
+                    <span class="selection-info">已选择{{ selected.length }}项 </span>
+                    <span class="selection-deselect" @click.stop="selected = []">取消选择</span>
+                  </template>
+                  <template v-else>文件名</template>
+                </span>
+                <span class="col-size">大小</span>
+                <span class="col-time">时间</span>
+                <span class="col-action">操作</span>
+              </div>
+              <div class="parse-scroll" ref="scrollEl">
+                <div v-for="f in pageFiles" :key="f.url" class="file-row" :class="{ selected: isSelected(f) }">
+                  <span class="col-check" @click.stop="onCheckClick(f, $event)">
+                    <NCheckbox :checked="isSelected(f)" />
+                  </span>
+                  <span class="col-name">
+                    <NIcon class="file-icon" :size="18" :color="getFileIconColor(f.name)">
+                      <component :is="getFileIconComponent(f.name)" />
+                    </NIcon>
+                    <span class="file-name" :title="f.name">{{ f.name }}</span>
+                  </span>
+                  <span class="col-size">{{ f.size || '—' }}</span>
+                  <span class="col-time">{{ f.time || '—' }}</span>
+                  <span class="col-action" @click.stop>
+                    <NButton size="small" text title="下载" @click="addToDownloads([f])">
+                      <NIcon :size="20">
+                        <CloudDownloadOutline />
+                      </NIcon>
+                    </NButton>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </NSpin>
+          <div v-if="totalPages > 1" class="files-pager">
+            <NPagination v-model:page="page" :page-count="totalPages" />
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -339,14 +554,20 @@ function downloadSelected() {
 
 .parse-form {
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
-.form-row {
+.parse-input-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  align-items: center;
+}
+
+.parse-input-row :deep(.n-input:first-child) {
+  flex: 1;
+}
+
+.parse-input-row :deep(.n-button.history-active) {
+  background: var(--m3-surface-container-highest);
 }
 
 .parse-bar {
@@ -390,11 +611,35 @@ function downloadSelected() {
   width: 130px;
 }
 
+.col-link {
+  width: 270px;
+  font-size: 14px;
+  color: var(--m3-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.col-pwd {
+  width: 110px;
+  font-size: 14px;
+  color: var(--m3-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.file-head :deep(.col-link),
+.file-head :deep(.col-pwd) {
+  font-size: 12px;
+  color: inherit;
+}
+
 .col-action {
-  width: 48px;
+  width: 76px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 4px;
   flex-shrink: 0;
 }
 </style>

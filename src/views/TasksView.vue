@@ -218,7 +218,7 @@ function confirmAction(title: string, content: string, onOk: () => void) {
     content,
     positiveText: '确定',
     negativeText: '取消',
-      onPositiveClick: onOk,
+    onPositiveClick: onOk,
   })
 }
 
@@ -232,7 +232,7 @@ function confirmDelete(title: string, content: string, onOk: (deleteLocal: boole
     title,
     positiveText: '删除',
     negativeText: '取消',
-      content: () =>
+    content: () =>
       h('div', { style: 'display:flex;flex-direction:column;gap:12px;' }, [
         h('div', null, content),
         showLocal
@@ -437,8 +437,8 @@ watch(
       <div class="tasks-toolbar">
         <div class="toolbar-left">
           <span class="select-all" @click="toggleSelectAll">
-            <NCheckbox :checked="allSelected" />
-            <span class="select-all-label">全选</span>
+            <NCheckbox :checked="allSelected" :indeterminate="selected.length > 0 && !allSelected" />
+            <span class="select-all-label">{{ selected.length > 0 ? (allSelected ? '取消全选' : '取消选择') : '全选' }}</span>
           </span>
           <NButton size="small" :disabled="!hasStartable" @click="startSelected">
             <template #icon>

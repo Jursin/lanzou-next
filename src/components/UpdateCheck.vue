@@ -92,7 +92,7 @@ onUnmounted(() => {
 <template>
   <NModal :show="dialogVisible" :mask-closable="!downloading" :close-on-esc="!downloading" preset="dialog"
     :title="dialogTitle" :positive-text="positiveText" :negative-text="phase === 'downloading' ? undefined : '稍后再说'"
-    transform-origin="center" @positive-click="onPositive" @negative-click="onClose"
+    @positive-click="onPositive" @negative-click="onClose"
     @update:show="(v) => { if (!v) onClose() }">
     <template #icon>
       <NIcon :component="dialogIcon" />

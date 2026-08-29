@@ -23,7 +23,7 @@ function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   return invoke<T>(cmd, args)
 }
 
-// config
+// 配置
 export const configGet = () => call<AppConfig>('config_get')
 export const configSet = (cfg: AppConfig) => call<void>('config_set', { cfg })
 export const configReset = () => call<AppConfig>('config_reset')
@@ -39,7 +39,7 @@ export const lanzouLs = (folderId?: number, folderFirst?: boolean) =>
 
 export const lanzouProfile = () => call<Profile>('lanzou_profile')
 
-// 分享 / 下载
+// 分享/下载
 export const lanzouShareInfo = (url: string, pwd?: string) => call<ShareInfo>('lanzou_share_info', { url, pwd })
 
 export const lanzouShareFolder = (url: string, pwd?: string) => call<ShareFolder>('lanzou_share_folder', { url, pwd })
@@ -64,7 +64,7 @@ export const lanzouDeleteLocal = (path: string, dir?: string, name?: string) =>
 
 export const lanzouDeleteLocalDir = (dir: string, name: string) => call<void>('lanzou_delete_local_dir', { dir, name })
 
-// 文件 / 文件夹操作
+// 文件/文件夹操作
 export const lanzouMkdir = (parentId: number, name: string, description?: string) =>
   call<string>('lanzou_mkdir', { parentId, name, description })
 

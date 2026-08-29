@@ -27,9 +27,19 @@ function extractShareInfo(text: string): { url: string; pwd: string } | null {
 let lastClipText = ''
 let checking = false
 let lastClipForDialog = ''
+let skipNextCheck = false
+
+/** 标记下一次检测跳过（用于应用自身复制后避免重复弹窗） */
+export function skipClipboardCheck() {
+  skipNextCheck = true
+}
 
 async function checkClipboard(router: Router, dialog: ReturnType<typeof useDialog>) {
   if (checking) return
+  if (skipNextCheck) {
+    skipNextCheck = false
+    return
+  }
   checking = true
   try {
     const text = await readText()

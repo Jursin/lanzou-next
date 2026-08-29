@@ -95,6 +95,12 @@ const downloadMax = ref<number | null>(null)
 const uploadMax = ref<number | null>(null)
 const uploadWarningSize = ref<number | null>(null)
 const splitSize = ref<number | null>(null)
+const uploadHistoryLimit = ref<number | null>(null)
+const downloadHistoryLimit = ref<number | null>(null)
+const parseHistoryLimit = ref<number | null>(null)
+const uploadHistoryLimitStart = ref<number | null>(null)
+const downloadHistoryLimitStart = ref<number | null>(null)
+const parseHistoryLimitStart = ref<number | null>(null)
 /** 强制重挂载分片输入框（超限回退时让显示值复位） */
 const splitInputKey = ref(0)
 /** 本次编辑开始前的分片大小，用于超限回滚 */
@@ -117,6 +123,9 @@ onMounted(async () => {
     uploadMax.value = preferenceStore.config.uploadMax ?? null
     uploadWarningSize.value = preferenceStore.config.uploadWarningSize ?? null
     splitSize.value = preferenceStore.config.splitSize ?? null
+    uploadHistoryLimit.value = preferenceStore.config.uploadHistoryLimit ?? null
+    downloadHistoryLimit.value = preferenceStore.config.downloadHistoryLimit ?? null
+    parseHistoryLimit.value = preferenceStore.config.parseHistoryLimit ?? null
     userAgent.value = preferenceStore.config.userAgent ?? DEFAULT_USER_AGENT
   } catch (e) {
     console.warn('load preference failed', e)
@@ -135,6 +144,26 @@ async function onDownloadMax(v: number | null) {
 async function onUploadMax(v: number | null) {
   uploadMax.value = v
   if (v != null) await onConfigChange({ uploadMax: v })
+}
+
+function onFocusUploadHistoryLimit() { uploadHistoryLimitStart.value = uploadHistoryLimit.value }
+function onFocusDownloadHistoryLimit() { downloadHistoryLimitStart.value = downloadHistoryLimit.value }
+function onFocusParseHistoryLimit() { parseHistoryLimitStart.value = parseHistoryLimit.value }
+
+function onBlurUploadHistoryLimit() {
+  if (uploadHistoryLimit.value !== uploadHistoryLimitStart.value && uploadHistoryLimit.value != null) {
+    void onConfigChange({ uploadHistoryLimit: uploadHistoryLimit.value })
+  }
+}
+function onBlurDownloadHistoryLimit() {
+  if (downloadHistoryLimit.value !== downloadHistoryLimitStart.value && downloadHistoryLimit.value != null) {
+    void onConfigChange({ downloadHistoryLimit: downloadHistoryLimit.value })
+  }
+}
+function onBlurParseHistoryLimit() {
+  if (parseHistoryLimit.value !== parseHistoryLimitStart.value && parseHistoryLimit.value != null) {
+    void onConfigChange({ parseHistoryLimit: parseHistoryLimit.value })
+  }
 }
 async function onWarningSize(v: number | null) {
   uploadWarningSize.value = v
@@ -341,7 +370,7 @@ function onClearLog() {
     content: '确定清空当前日志文件吗？',
     positiveText: '清空',
     negativeText: '取消',
-      onPositiveClick: async () => {
+    onPositiveClick: async () => {
       try {
         await logClear()
         message.success('日志已清空')
@@ -372,7 +401,7 @@ function onLogout() {
     content: '确定退出当前账号吗？',
     positiveText: '退出',
     negativeText: '取消',
-      onPositiveClick: async () => {
+    onPositiveClick: async () => {
       await appStore.logout()
       message.success('已退出登录')
     },
@@ -400,7 +429,7 @@ function onRestoreDefaults() {
     content: '将重置全部设置项为默认值，但保留登录状态，是否恢复？',
     positiveText: '恢复',
     negativeText: '取消',
-      onPositiveClick: async () => {
+    onPositiveClick: async () => {
       try {
         const cfg = await configReset()
         preferenceStore.config = { ...DEFAULT_CONFIG, ...cfg }
@@ -408,6 +437,9 @@ function onRestoreDefaults() {
         uploadMax.value = cfg.uploadMax ?? null
         uploadWarningSize.value = cfg.uploadWarningSize ?? null
         splitSize.value = cfg.splitSize ?? null
+        uploadHistoryLimit.value = cfg.uploadHistoryLimit ?? null
+        downloadHistoryLimit.value = cfg.downloadHistoryLimit ?? null
+        parseHistoryLimit.value = cfg.parseHistoryLimit ?? null
         appStore.themeSource = 'auto'
         appStore.colorScheme = DEFAULT_COLOR_SCHEME
         appStore.applyTheme()
@@ -598,6 +630,56 @@ function onRestoreDefaults() {
                 />
                 <span class="pref-inline-row__meta">MB</span>
                 <span class="pref-inline-row__meta pref-inline-row__meta--muted">不应超过账号限制</span>
+              </div>
+            </NFormItem>
+
+            <NDivider title-placement="left">记录上限</NDivider>
+            <NFormItem label="上传记录上限">
+              <div class="pref-inline-row">
+                <NInputNumber
+                  v-model:value="uploadHistoryLimit"
+                  button-placement="both"
+                  :min="0"
+                  :max="9999"
+                  placeholder="请输入"
+                  class="pref-number"
+                  @focus="onFocusUploadHistoryLimit"
+                  @blur="onBlurUploadHistoryLimit"
+                  @keydown.enter="$event.target.blur()"
+                />
+                <span class="pref-inline-row__meta pref-inline-row__meta--muted">0 = 无限制</span>
+              </div>
+            </NFormItem>
+            <NFormItem label="下载记录上限">
+              <div class="pref-inline-row">
+                <NInputNumber
+                  v-model:value="downloadHistoryLimit"
+                  button-placement="both"
+                  :min="0"
+                  :max="9999"
+                  placeholder="请输入"
+                  class="pref-number"
+                  @focus="onFocusDownloadHistoryLimit"
+                  @blur="onBlurDownloadHistoryLimit"
+                  @keydown.enter="$event.target.blur()"
+                />
+                <span class="pref-inline-row__meta pref-inline-row__meta--muted">0 = 无限制</span>
+              </div>
+            </NFormItem>
+            <NFormItem label="解析记录上限">
+              <div class="pref-inline-row">
+                <NInputNumber
+                  v-model:value="parseHistoryLimit"
+                  button-placement="both"
+                  :min="0"
+                  :max="9999"
+                  placeholder="请输入"
+                  class="pref-number"
+                  @focus="onFocusParseHistoryLimit"
+                  @blur="onBlurParseHistoryLimit"
+                  @keydown.enter="$event.target.blur()"
+                />
+                <span class="pref-inline-row__meta pref-inline-row__meta--muted">0 = 无限制</span>
               </div>
             </NFormItem>
 
@@ -882,5 +964,18 @@ function onRestoreDefaults() {
 
 .pref-number :deep(.n-input__input-el) {
   text-align: center;
+  line-height: var(--n-height);
+}
+
+.pref-number :deep(.n-input__placeholder) {
+  text-align: center;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pref-number :deep(.n-input) {
+  --n-placeholder-color: var(--m3-on-surface-variant);
 }
 </style>

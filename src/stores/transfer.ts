@@ -332,10 +332,22 @@ export const useTransferStore = defineStore('transfer', () => {
     onUploadDoneCallback = cb
   }
 
-  function moveToCompleted(list: TransferItem[], item: TransferItem) {
+  async function moveToCompleted(list: TransferItem[], item: TransferItem) {
     const idx = list.findIndex((i) => i.id === item.id)
     if (idx >= 0) list.splice(idx, 1)
     completed.value.unshift({ ...item, status: 'done', speed: 0 })
+    // 根据配置上限裁剪记录
+    try {
+      const cfg = await configGet()
+      const limit = item.kind === 'upload'
+        ? (cfg.uploadHistoryLimit ?? 100)
+        : (cfg.downloadHistoryLimit ?? 100)
+      if (limit > 0 && completed.value.length > limit) {
+        completed.value.length = limit
+      }
+    } catch {
+      // 读取配置失败时不限制
+    }
     persist()
   }
 

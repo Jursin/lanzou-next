@@ -51,6 +51,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   logLevel: 'info',
   autoCheckUpdate: true,
   betaUpdate: false,
+  uploadHistoryLimit: 100,
+  downloadHistoryLimit: 100,
+  parseHistoryLimit: 100,
 }
 
 /** 关于内的外部链接 */

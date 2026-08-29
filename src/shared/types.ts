@@ -210,6 +210,12 @@ export interface AppConfig {
   lastCheckUpdateTime?: number
   /** GitHub 加速地址，留空则直连 */
   githubProxyUrl?: string
+  /** 上传记录上限（0 = 无限制） */
+  uploadHistoryLimit?: number
+  /** 下载记录上限（0 = 无限制） */
+  downloadHistoryLimit?: number
+  /** 解析记录上限（0 = 无限制） */
+  parseHistoryLimit?: number
 }
 
 /** 更新检查结果 */

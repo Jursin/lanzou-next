@@ -60,6 +60,12 @@ pub struct AppConfig {
     pub last_check_update_time: Option<u64>,
     /// GitHub 加速地址，留空则直连
     pub github_proxy_url: Option<String>,
+    /// 上传记录上限（0 = 无限制）
+    pub upload_history_limit: Option<u32>,
+    /// 下载记录上限（0 = 无限制）
+    pub download_history_limit: Option<u32>,
+    /// 解析记录上限（0 = 无限制）
+    pub parse_history_limit: Option<u32>,
 }
 
 fn store<R: Runtime>(
@@ -106,6 +112,9 @@ pub fn config_get(app: AppHandle) -> Result<AppConfig, AppError> {
         beta_update: get("beta_update").and_then(|v| v.as_bool()),
         last_check_update_time: get("last_check_update_time").and_then(|v| v.as_u64()),
         github_proxy_url: get("github_proxy_url").and_then(|v| v.as_str().map(String::from)),
+        upload_history_limit: get("upload_history_limit").and_then(|v| v.as_u64()).map(|v| v as u32),
+        download_history_limit: get("download_history_limit").and_then(|v| v.as_u64()).map(|v| v as u32),
+        parse_history_limit: get("parse_history_limit").and_then(|v| v.as_u64()).map(|v| v as u32),
     })
 }
 
@@ -144,6 +153,9 @@ pub async fn config_set(app: AppHandle, cfg: AppConfig) -> Result<(), AppError> 
         "auto_check_update" => auto_check_update,
         "beta_update" => beta_update,
         "last_check_update_time" => last_check_update_time,
+        "upload_history_limit" => upload_history_limit,
+        "download_history_limit" => download_history_limit,
+        "parse_history_limit" => parse_history_limit,
     }, changed);
 
     // 需要特殊处理的字段
@@ -232,6 +244,9 @@ fn write_defaults<R: Runtime>(
         beta_update: Some(false),
         last_check_update_time: None,
         github_proxy_url: None,
+        upload_history_limit: Some(100),
+        download_history_limit: Some(100),
+        parse_history_limit: Some(100),
     };
     store.set("download_dir", serde_json::json!(download_dir));
     store.set("set_default_download_dir", serde_json::json!(false));
@@ -245,7 +260,7 @@ fn write_defaults<R: Runtime>(
     store.set("minimize_to_tray_on_close", serde_json::json!(true));
     store.set("lightweight_mode", serde_json::json!(true));
     store.set("dev_tools", serde_json::json!(false));
-    store.set("log_level", serde_json::json!("warn"));
+    store.set("log_level", serde_json::json!("info"));
     store.set("auto_check_update", serde_json::json!(true));
     store.set("beta_update", serde_json::json!(false));
     default_cfg
