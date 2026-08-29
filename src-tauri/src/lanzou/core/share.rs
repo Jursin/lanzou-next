@@ -31,7 +31,7 @@ pub struct ShareInfo {
     pub r#type: ShareType,
     /// 文件名或文件夹名
     pub name: String,
-    /// 提取码
+    /// 密码
     pub pwd: Option<String>,
 }
 
@@ -71,7 +71,7 @@ pub async fn ls_share(
     if is_file {
         // 文件：无密码（iframe）或有密码（passwddiv）
         if html.contains("id=\"passwddiv\"") && pwd.is_none() {
-            return Err(AppError::Lanzou("需要提取码".into()));
+            return Err(AppError::Lanzou("需要密码".into()));
         }
         let name = extract_file_name(&html);
         return Ok(ShareInfo {
@@ -140,9 +140,9 @@ pub async fn file_download_url(
     let (final_url, html) = get_share_page(client, url).await?;
     let html = matcher::remove_notes(&html);
 
-    // 带提取码的文件：passwddiv，sign 在页面 JS 里，ajaxm url 带 file 参数
+    // 带密码的文件：passwddiv，sign 在页面 JS 里，ajaxm url 带 file 参数
     if html.contains("id=\"passwddiv\"") || html.contains("id=\"pwdload\"") {
-        let pwd = pwd.ok_or_else(|| AppError::Lanzou("需要提取码".into()))?;
+        let pwd = pwd.ok_or_else(|| AppError::Lanzou("需要密码".into()))?;
         let sign = matcher::match_sign(&html)?;
         // 提取 ajaxm url（含 file 参数），如 /ajaxm.php?file=277944670
         let ajax_path = extract_ajaxm_path(&html, &final_url);
@@ -159,7 +159,7 @@ pub async fn file_download_url(
         return post_ajaxm(client, &final_url, ajax_path, form).await;
     }
 
-    // 无提取码：iframe → 下载页(fn) → sign → ajaxm
+    // 无密码：iframe → 下载页(fn) → sign → ajaxm
     let iframe = matcher::match_iframe(&html)?;
     let iframe_url = resolve_url(&base_domain(&final_url), &iframe);
     let down_html = client
@@ -182,7 +182,7 @@ pub async fn file_download_url(
         form.insert("kd".into(), "1".into());
         form.insert("ves".into(), "1".into());
     } else {
-        // 文件夹内文件：页面无 passwddiv 但下载可能需要文件夹提取码
+        // 文件夹内文件：页面无 passwddiv 但下载可能需要文件夹密码
         form.insert("p".into(), pwd.unwrap_or("").to_string());
         if let Some(fid) = extract_file_param(&ajax_path) {
             form.insert("file".into(), fid);
@@ -368,7 +368,7 @@ pub async fn ls_share_folder(
                 }
                 break;
             }
-            3 => return Err(AppError::Lanzou("提取码错误".into())),
+            3 => return Err(AppError::Lanzou("密码错误".into())),
             _ => break,
         }
     }

@@ -14,7 +14,7 @@ pub const DEFAULT_USER_AGENT: &str =
 /// 蓝奏云响应包装。zt: 1/2 成功, 9 登录失效
 #[derive(Debug, Clone, serde::Deserialize)]
 pub struct LanzouResponse<T> {
-    pub zt: u32,
+    pub zt: Option<u32>,
     /// info 可能是字符串或数组，用 Value 兼容
     pub info: Option<serde_json::Value>,
     pub text: Option<T>,
@@ -305,10 +305,10 @@ impl LanzouClient {
             AppError::Lanzou(format!("非标准 JSON 响应: {} ({})", e, truncate(&body)))
         })?;
         match wrapper.zt {
-            1 | 2 => wrapper
+            Some(1) | Some(2) => wrapper
                 .text
                 .ok_or_else(|| AppError::Lanzou("响应缺少 text 字段".into())),
-            9 => Err(AppError::NotLoggedIn),
+            Some(9) => Err(AppError::NotLoggedIn),
             _ => {
                 let msg = wrapper
                     .info
@@ -342,10 +342,10 @@ impl LanzouClient {
                 AppError::Lanzou(format!("非标准 JSON 响应: {} ({})", e, truncate(&body)))
             })?;
         match wrapper.zt {
-            1 | 2 => wrapper
+            Some(1) | Some(2) => wrapper
                 .info
                 .ok_or_else(|| AppError::Lanzou("响应缺少 info 字段".into())),
-            9 => Err(AppError::NotLoggedIn),
+            Some(9) => Err(AppError::NotLoggedIn),
             _ => {
                 let msg = wrapper
                     .info
@@ -379,8 +379,8 @@ impl LanzouClient {
                 AppError::Lanzou(format!("非标准 JSON 响应: {} ({})", e, truncate(&body)))
             })?;
         match wrapper.zt {
-            1 | 2 => Ok(()),
-            9 => Err(AppError::NotLoggedIn),
+            Some(1) | Some(2) => Ok(()),
+            Some(9) => Err(AppError::NotLoggedIn),
             _ => {
                 let msg = wrapper
                     .info

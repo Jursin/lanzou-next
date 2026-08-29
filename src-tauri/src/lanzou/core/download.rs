@@ -15,7 +15,7 @@ pub struct DownloadTask {
     pub id: String,
     /// 分享链接
     pub url: String,
-    /// 提取码
+    /// 密码
     pub pwd: Option<String>,
     /// 保存目录
     pub dir: String,

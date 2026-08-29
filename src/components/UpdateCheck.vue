@@ -2,14 +2,19 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { NIcon, NModal, NProgress, NTag } from 'naive-ui'
 import { ArrowUpCircleOutline, AlertCircleOutline } from '@vicons/ionicons5'
+import { useRouter } from 'vue-router'
 
 import { useUpdateCheck, setDialogFn } from '@/composables/useUpdateCheck'
+import { useClipboardCheck } from '@/composables/useClipboardCheck'
 import type { UpdateInfo } from '@/shared/types'
 import { VERSION } from '@/shared/constants'
 import { formatSize } from '@/shared/util'
 
 const { silentStartupCheck, startDownload, downloading, downloadProgress, downloadError, handleClose } =
   useUpdateCheck()
+
+const router = useRouter()
+useClipboardCheck(router)
 
 const dialogVisible = ref(false)
 const dialogInfo = ref<UpdateInfo | null>(null)

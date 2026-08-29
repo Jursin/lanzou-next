@@ -25,6 +25,7 @@
     "dialog:default",
     "store:default",
     "log:default",
+    "clipboard-manager:allow-read-text",
     "allow-config-get",
     "allow-config-set",
     "allow-config-reset",

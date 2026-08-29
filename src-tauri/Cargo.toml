@@ -31,6 +31,7 @@ dirs = "6"
 chrono = "0.4"
 sanitize-filename = "0.6"
 rand = "0.8"
+tauri-plugin-clipboard-manager = "2.3.2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_UI_Shell", "Win32_UI_WindowsAndMessaging"] }

@@ -300,7 +300,7 @@ async fn ensure_folder(client: &LanzouClient, parent_id: i64, name: &str) -> Res
         .map_err(|_| AppError::Lanzou("新建文件夹 id 解析失败".into()))
 }
 
-/// 设置文件访问权限（shows: 0 关闭提取码 / 1 开启；shownames 为提取码）
+/// 设置文件访问权限（shows: 0 关闭访问密码 / 1 开启访问密码；shownames 为访问密码）
 pub async fn set_file_access(
     client: &LanzouClient,
     file_id: &str,
@@ -383,9 +383,9 @@ pub async fn set_file_description(
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ShareDetail {
-    /// 提取码是否开启
+    /// 访问密码是否开启
     pub has_pwd: bool,
-    /// 提取码
+    /// 访问密码
     pub pwd: Option<String>,
     /// 分享链接
     pub url: Option<String>,

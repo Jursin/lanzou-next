@@ -9,6 +9,7 @@ import { useTransferStore } from '@/stores/transfer'
 import { lanzouShareFolder, lanzouShareInfo } from '@/shared/api'
 import { getFileIconColor, getFileIconComponent } from '@/shared/fileIcons'
 import { expandRangeSelection } from '@/shared/util'
+import { useRoute } from 'vue-router'
 
 interface ParseFile {
   name: string
@@ -20,6 +21,7 @@ interface ParseFile {
 
 const message = useMessage()
 const transferStore = useTransferStore()
+const route = useRoute()
 
 const url = ref('')
 const pwd = ref('')
@@ -57,6 +59,14 @@ function syncScrollbarGutter() {
 }
 onMounted(() => {
   nextTick(syncScrollbarGutter)
+  // 从路由查询参数填充（剪贴板跳转）
+  const qUrl = route.query.url
+  const qPwd = route.query.pwd
+  if (qUrl && typeof qUrl === 'string') {
+    url.value = qUrl
+    if (qPwd && typeof qPwd === 'string') pwd.value = qPwd
+    void parse()
+  }
 })
 
 // 分页
@@ -120,7 +130,7 @@ function toggleSelectAll() {
   }
 }
 
-/** 从粘贴文本中提取链接与提取码 */
+/** 从粘贴文本中提取链接与密码 */
 function extractFromPaste(text: string): { url: string; pwd: string } | null {
   // 移除换行
   const clean = text.replace(/\r?\n/g, ' ').trim()
@@ -171,7 +181,7 @@ async function parse() {
   }
 }
 
-/** 粘贴后回车：提取合法链接与提取码填入输入框，再解析，并将焦点移出输入框 */
+/** 粘贴后回车：提取合法链接与密码填入输入框，再解析，并将焦点移出输入框 */
 async function handleEnter() {
   const extracted = extractFromPaste(url.value)
   if (extracted) {
@@ -215,13 +225,13 @@ function downloadSelected() {
       <div class="parse-form">
         <NInput
           v-model:value="url"
-          placeholder="粘贴分享文本，回车自动填充链接与提取码"
+          placeholder="粘贴分享文本，回车自动填充链接与密码"
           @keydown.enter.prevent="handleEnter"
         />
         <div class="form-row">
           <NInput
             v-model:value="pwd"
-            placeholder="提取码（可选）"
+            placeholder="密码（可选）"
             style="width: 220px"
             @keydown.enter.prevent="handleEnter"
           />

@@ -27,7 +27,7 @@ export type TransferItem = {
   payload?: string
   /** 分享链接下载：直填分享 URL（解析页/同步页），优先于 payload */
   url?: string
-  /** 分享提取码 */
+  /** 分享密码 */
   pwd?: string
   /** 上传目标文件夹 id */
   folderId?: number

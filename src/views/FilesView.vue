@@ -217,14 +217,28 @@ const showAccess = ref(false)
 const accessPwd = ref('')
 const accessShows = ref(false)
 
-function openAccess() {
+async function openAccess() {
+  const file = contextFile.value
+  if (!file) return
   accessPwd.value = ''
   accessShows.value = false
   showAccess.value = true
+  try {
+    const detail = file.type === 'folder'
+      ? await lanzouFolderDetail(file.id)
+      : await lanzouFileDetail(file.id)
+    if (detail.hasPwd && detail.pwd) {
+      accessShows.value = true
+      accessPwd.value = detail.pwd
+    }
+  } catch {
+    // 获取失败时保持空白，用户可手动设置
+  }
 }
 
-// 蓝奏云要求密码长度 2-6 位，不含空格（服务端实际接受全角符号等字符）
-const accessPwdValid = computed(() => /^\S{2,6}$/.test(accessPwd.value))
+// 蓝奏云要求密码长度 2-12 位，不含空格（服务端实际接受全角符号等字符）
+const accessPwdHasSpace = computed(() => /\s/.test(accessPwd.value))
+const accessPwdValid = computed(() => accessPwd.value.length >= 2 && accessPwd.value.length <= 12 && !accessPwdHasSpace.value)
 // 分享链接
 const showShareLink = ref(false)
 const shareLinks = ref('')
@@ -1008,10 +1022,7 @@ async function doShare() {
 async function doSetAccess() {
   const files = selected.value.length ? selected.value : contextFile.value ? [contextFile.value] : []
   if (!files.length) return
-  if (accessShows.value && !accessPwdValid.value) {
-    message.warning('密码需为 2-6 位且不能包含空格')
-    return
-  }
+  if (accessShows.value && !accessPwdValid.value) return
   moving.value = true
   try {
     const shows = accessShows.value ? 1 : 0
@@ -1740,8 +1751,8 @@ async function doDesc() {
           <span class="access-label">访问密码</span>
           <NSwitch v-model:value="accessShows" size="small" />
         </div>
-        <NInput v-if="accessShows" v-model:value="accessPwd" placeholder="请输入访问密码" maxlength="6" show-count @keydown.enter="doSetAccess" />
-        <p v-if="accessShows && !accessPwdValid" class="access-hint">密码需为 2-6 位且不能包含空格</p>
+        <NInput v-if="accessShows" v-model:value="accessPwd" placeholder="请输入 2-12 位访问密码" show-count :render-count="({ value }) => `${value.length}/12`" :status="accessPwd.length > 12 || accessPwdHasSpace ? 'error' : undefined" @keydown.enter="doSetAccess" />
+        <p v-if="accessShows && accessPwdHasSpace" class="access-hint">不能包含空格</p>
       </div>
     </NModal>
 
