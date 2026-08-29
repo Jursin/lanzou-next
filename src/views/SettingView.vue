@@ -341,8 +341,7 @@ function onClearLog() {
     content: '确定清空当前日志文件吗？',
     positiveText: '清空',
     negativeText: '取消',
-    transformOrigin: 'center',
-    onPositiveClick: async () => {
+      onPositiveClick: async () => {
       try {
         await logClear()
         message.success('日志已清空')
@@ -373,8 +372,7 @@ function onLogout() {
     content: '确定退出当前账号吗？',
     positiveText: '退出',
     negativeText: '取消',
-    transformOrigin: 'center',
-    onPositiveClick: async () => {
+      onPositiveClick: async () => {
       await appStore.logout()
       message.success('已退出登录')
     },
@@ -392,8 +390,7 @@ function showDisclaimer() {
     title: '免责声明',
     content: () => h('div', { style: 'white-space: pre-wrap; line-height: 1.8' }, lines.join('\n')),
     positiveText: '我知道了',
-    transformOrigin: 'center',
-  })
+    })
 }
 
 /** 恢复默认设置：重置全部配置为默认值，保留登录状态（接口地址/域名/UA/cookies） */
@@ -403,8 +400,7 @@ function onRestoreDefaults() {
     content: '将重置全部设置项为默认值，但保留登录状态，是否恢复？',
     positiveText: '恢复',
     negativeText: '取消',
-    transformOrigin: 'center',
-    onPositiveClick: async () => {
+      onPositiveClick: async () => {
       try {
         const cfg = await configReset()
         preferenceStore.config = { ...DEFAULT_CONFIG, ...cfg }

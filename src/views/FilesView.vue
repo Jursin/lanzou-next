@@ -404,8 +404,7 @@ async function handleDroppedPaths(paths: string[]) {
       ]),
       positiveText: '上传',
       negativeText: '取消',
-      transformOrigin: 'center',
-      onPositiveClick: () => resolve(true),
+          onPositiveClick: () => resolve(true),
       onNegativeClick: () => resolve(false),
       onClose: () => resolve(false),
     })
@@ -832,8 +831,7 @@ async function checkUploadWarning(): Promise<boolean> {
       content: `当天上传总流量（${formatSize(size)}）已超过警戒线（${warningSize} GB），是否继续上传？`,
       positiveText: '继续上传',
       negativeText: '取消',
-      transformOrigin: 'center',
-      onPositiveClick: () => resolve(true),
+          onPositiveClick: () => resolve(true),
       onNegativeClick: () => resolve(false),
       onClose: () => resolve(false),
     })
@@ -856,8 +854,7 @@ async function startUploadWithPrecheck(path: string) {
         content: `当前目录已存在同名文件「${fileName}」，是否覆盖？`,
         positiveText: '覆盖',
         negativeText: '跳过',
-        transformOrigin: 'center',
-        onPositiveClick: () => resolve(true),
+              onPositiveClick: () => resolve(true),
         onNegativeClick: () => resolve(false),
         onClose: () => resolve(false),
       })
@@ -900,8 +897,7 @@ async function startUploadWithPrecheck(path: string) {
         content: `文件大小超出账号单个文件限制${limitText ? `（${limitText}）` : ''}，是否分片上传？`,
         positiveText: '是',
         negativeText: '否',
-        transformOrigin: 'center',
-        onPositiveClick: () => resolve(true),
+              onPositiveClick: () => resolve(true),
         onNegativeClick: () => resolve(false),
         onClose: () => resolve(false),
       })
@@ -914,8 +910,7 @@ async function startUploadWithPrecheck(path: string) {
         content: `存在 ${oversized.length} 个文件大小超出限制${limitText ? `（${limitText}）` : ''}，是否将超出大小限制文件全部分片上传？`,
         positiveText: '确定',
         negativeText: '跳过',
-        transformOrigin: 'center',
-        onPositiveClick: () => resolve(true),
+              onPositiveClick: () => resolve(true),
         onNegativeClick: () => resolve(false),
         onClose: () => resolve(false),
       })
@@ -968,8 +963,7 @@ function doDelete() {
     content: `确定删除选中的 ${files.length} 项吗？`,
     positiveText: '删除',
     negativeText: '取消',
-    transformOrigin: 'center',
-    onPositiveClick: () => {
+      onPositiveClick: () => {
       startFileDelete(files)
     },
   })
@@ -998,7 +992,6 @@ async function doShare() {
         QRCode.toDataURL(item.url, {
           width: 190,
           margin: 2,
-          color: { dark: '#3f3f3f', light: '#ffffff' },
           errorCorrectionLevel: 'H',
         }).then((dataUrl) => ({ url: item.url, name: item.name, dataUrl })),
       ),
@@ -1118,8 +1111,7 @@ async function doMergeDownload() {
       content: `将下载 ${group.files.length} 个分片文件并合并为「${group.merged}」，是否保留分片文件？`,
       positiveText: '保留',
       negativeText: '删除',
-      transformOrigin: 'center',
-      onPositiveClick: () => resolve(true),
+          onPositiveClick: () => resolve(true),
       onNegativeClick: () => resolve(false),
       onClose: () => resolve(false),
     })
@@ -1716,8 +1708,7 @@ async function doDesc() {
       title="新建文件夹"
       positive-text="创建"
       negative-text="取消"
-      transform-origin="center"
-      @positive-click="doMkdir"
+          @positive-click="doMkdir"
     >
       <NInput v-model:value="newFolderName" placeholder="文件夹名称" @keydown.enter="doMkdir" />
     </NModal>
@@ -1729,8 +1720,7 @@ async function doDesc() {
       title="重命名"
       positive-text="确定"
       negative-text="取消"
-      transform-origin="center"
-      @positive-click="doRename"
+          @positive-click="doRename"
     >
       <NInput v-model:value="renameName" placeholder="新名称" @keydown.enter="doRename" />
     </NModal>
@@ -1742,8 +1732,7 @@ async function doDesc() {
       title="设置密码"
       positive-text="确定"
       negative-text="取消"
-      transform-origin="center"
-      :positive-button-props="{ disabled: accessShows && !accessPwdValid }"
+          :positive-button-props="{ disabled: accessShows && !accessPwdValid }"
       @positive-click="doSetAccess"
     >
       <div class="access-form">
@@ -1763,8 +1752,7 @@ async function doDesc() {
       title="分享链接"
       positive-text="复制"
       negative-text="关闭"
-      transform-origin="center"
-      :on-positive-click="copyShare"
+          :on-positive-click="copyShare"
     >
       <div class="share-links">{{ shareLinks }}</div>
       <div v-if="shareQrCodes.length" class="share-qrcodes">
@@ -1781,8 +1769,7 @@ async function doDesc() {
       title="移动到"
       positive-text="移动"
       negative-text="取消"
-      transform-origin="center"
-      :positive-button-props="{ disabled: !canMove }"
+          :positive-button-props="{ disabled: !canMove }"
       @positive-click="doMove"
     >
       <div class="move-tree">
@@ -1808,8 +1795,7 @@ async function doDesc() {
       title="添加描述"
       positive-text="保存"
       negative-text="取消"
-      transform-origin="center"
-      @positive-click="doDesc"
+          @positive-click="doDesc"
     >
       <NInput
         v-model:value="descText"
@@ -2012,11 +1998,8 @@ async function doDesc() {
 }
 
 .share-links {
-  margin: 0;
   white-space: pre-line;
   word-break: break-all;
-  font-size: 13px;
-  line-height: 1.6;
   max-height: 300px;
   overflow: auto;
 }

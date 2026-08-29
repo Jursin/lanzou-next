@@ -218,8 +218,7 @@ function confirmAction(title: string, content: string, onOk: () => void) {
     content,
     positiveText: '确定',
     negativeText: '取消',
-    transformOrigin: 'center',
-    onPositiveClick: onOk,
+      onPositiveClick: onOk,
   })
 }
 
@@ -233,8 +232,7 @@ function confirmDelete(title: string, content: string, onOk: (deleteLocal: boole
     title,
     positiveText: '删除',
     negativeText: '取消',
-    transformOrigin: 'center',
-    content: () =>
+      content: () =>
       h('div', { style: 'display:flex;flex-direction:column;gap:12px;' }, [
         h('div', null, content),
         showLocal
