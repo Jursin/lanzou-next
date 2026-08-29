@@ -1,0 +1,9 @@
+[build]
+jobs = 4
+
+[profile.dev]
+debug = 1
+incremental = true
+
+[profile.dev.package."*"]
+opt-level = 2
