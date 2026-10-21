@@ -334,15 +334,17 @@ watch(totalPages, (tp) => {
 })
 
 const allSelected = computed(() => {
-  const list = filesStore.files
+  const list = sortedFiles.value
   return list.length > 0 && list.every((f) => selected.value.some((s) => s.id === f.id))
 })
 
 function toggleSelectAll() {
   if (allSelected.value) {
-    selected.value = []
+    const ids = new Set(sortedFiles.value.map((f) => f.id))
+    selected.value = selected.value.filter((s) => !ids.has(s.id))
   } else {
-    selected.value = filesStore.files.slice()
+    const ids = new Set(selected.value.map((s) => s.id))
+    selected.value = [...selected.value, ...sortedFiles.value.filter((f) => !ids.has(f.id))]
   }
 }
 
@@ -1601,7 +1603,7 @@ async function doDesc() {
                 </template>
                 <template v-else>
                   文件名
-                  <span class="file-count">(共{{ filesStore.files.length }}项)</span>
+                  <span class="file-count">(共{{ sortedFiles.length }}项)</span>
                   <span class="sort-arrows" :class="sortArrowClass('name')">
                     <NIcon :size="12" class="sort-up" :class="{ on: sortKey === 'name' && sortAsc }">
                       <CaretUpOutline />
