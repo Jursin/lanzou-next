@@ -29,7 +29,7 @@
 
   --m3-scrollbar-thumb: color-mix(in srgb, var(--m3-on-surface) 24%, transparent);
 
-  --subnav-bg: var(--m3-surface-container-highest);
+  --subnav-bg: var(--m3-surface-container);
   --subnav-title: var(--m3-on-surface);
   --subnav-text: var(--m3-on-surface-variant);
   --subnav-active-text: var(--m3-on-surface);
@@ -78,7 +78,7 @@
 
   --m3-warning: #f0a020;
 
-  --subnav-bg: var(--m3-surface-container-lowest);
+  --subnav-bg: var(--m3-surface-container);
   --main-bg: var(--m3-surface-container-high);
   --task-item-bg: var(--m3-surface-container);
 }

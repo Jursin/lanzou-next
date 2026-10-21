@@ -42,11 +42,11 @@ function surfaceRoles(def: ColorSchemeDefinition, dark: boolean): Record<string,
     }
   }
   return {
-    '--m3-surface-container-lowest': t(100),
-    '--m3-surface-container-low': t(96),
-    '--m3-surface-container': t(94),
-    '--m3-surface-container-high': t(92),
-    '--m3-surface-container-highest': t(90),
+    '--m3-surface-container-lowest': t(98),
+    '--m3-surface-container-low': t(94),
+    '--m3-surface-container': t(91),
+    '--m3-surface-container-high': t(88),
+    '--m3-surface-container-highest': t(85),
   }
 }
 
