@@ -10,6 +10,7 @@ import { usePreferenceStore } from '@/stores/preference'
 import { lanzouShareFolder, lanzouShareInfo } from '@/shared/api'
 import { getFileIconColor, getFileIconComponent } from '@/shared/fileIcons'
 import { expandRangeSelection } from '@/shared/util'
+import { extractShareLink } from '@/shared/share-link'
 import { useRoute } from 'vue-router'
 import { skipClipboardCheck } from '@/composables/useClipboardCheck'
 
@@ -252,22 +253,8 @@ function toggleSelectAll() {
 }
 
 /** 从粘贴文本中提取链接与密码 */
-function extractFromPaste(text: string): { url: string; pwd: string } | null {
-  // 移除换行
-  const clean = text.replace(/\r?\n/g, ' ').trim()
-  const urlMatch = clean.match(/https?:\/\/\S+/)
-  if (!urlMatch) return null
-  const url = urlMatch[0].replace(/[，。,\s]+$/, '')
-  const after = clean.slice((urlMatch.index || 0) + urlMatch[0].length).trim()
-  // 优先 "密码:xxx" / "密码：xxx"，否则取链接后的独立词（如 "链接 MCPF"）
-  let pwd = ''
-  const pwdMatch = after.match(/密码[:：]\s*([^\s，。、]+)/)
-  if (pwdMatch) {
-    pwd = pwdMatch[1]
-  } else if (after) {
-    pwd = after.split(/[\s，。、]+/)[0].replace(/[，。]$/, '')
-  }
-  return { url, pwd }
+function extractFromPaste(text: string) {
+  return extractShareLink(text, /https?:\/\/\S+/)
 }
 
 async function parse() {

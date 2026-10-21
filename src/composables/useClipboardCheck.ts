@@ -3,33 +3,18 @@ import { useDialog } from 'naive-ui'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { readText } from '@tauri-apps/plugin-clipboard-manager'
 import type { Router } from 'vue-router'
+import { extractShareLink } from '@/shared/share-link'
 
-/** 匹配蓝奏云分享链接 */
-const LANZOU_URL_RE = /https?:\/\/[a-z0-9.-]*lanzn\.com\/\S+/i
-
-/** 从文本中提取分享链接和密码 */
-function extractShareInfo(text: string): { url: string; pwd: string } | null {
-  const clean = text.replace(/\r?\n/g, ' ').trim()
-  const urlMatch = clean.match(LANZOU_URL_RE)
-  if (!urlMatch) return null
-  const url = urlMatch[0].replace(/[，。,\s]+$/, '')
-  const after = clean.slice((urlMatch.index || 0) + urlMatch[0].length).trim()
-  let pwd = ''
-  const pwdMatch = after.match(/密码[:：]\s*([^\s，。、]+)/)
-  if (pwdMatch) {
-    pwd = pwdMatch[1]
-  } else if (after) {
-    pwd = after.split(/[\s，。、]+/)[0].replace(/[，。]$/, '')
-  }
-  return { url, pwd }
-}
+// 匹配蓝奏云分享链接（lanzn.com 及 lanzou*/lan[zs]o[ux] 旧域名）
+const LANZOU_URL_RE =
+  /https?:\/\/(?:[\w-]+\.)*(?:lanzn|lanzou[a-z0-9-]*|lan[zs]o[ux])\.(?:com|net|org|cn)\/\S+/i
 
 let lastClipText = ''
 let checking = false
 let lastClipForDialog = ''
 let skipNextCheck = false
 
-/** 标记下一次检测跳过（用于应用自身复制后避免重复弹窗） */
+// 标记下一次检测跳过（用于应用自身复制后避免重复弹窗）
 export function skipClipboardCheck() {
   skipNextCheck = true
 }
@@ -45,7 +30,7 @@ async function checkClipboard(router: Router, dialog: ReturnType<typeof useDialo
     const text = await readText()
     if (!text || text === lastClipText) return
     lastClipText = text
-    const info = extractShareInfo(text)
+    const info = extractShareLink(text, LANZOU_URL_RE)
     if (!info) return
     lastClipForDialog = text
     dialog.info({
