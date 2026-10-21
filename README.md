@@ -1,6 +1,6 @@
 # Lanzou-Next
 
-![](https://img.shields.io/badge/Tauri-2.11-24C8D8?logo=tauri)
+![](https://img.shields.io/badge/Tauri-2.12-24C8D8?logo=tauri)
 ![](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vuedotjs)
 ![](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
 ![](https://img.shields.io/badge/Rust-1.97-black?logo=rust)

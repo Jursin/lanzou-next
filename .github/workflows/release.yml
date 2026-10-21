@@ -12,7 +12,7 @@ concurrency:
 jobs:
   frontend:
     name: Frontend build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -66,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ''
-          includeUpdaterJson: false
+          uploadUpdaterJson: false
           args: --bundles nsis ${{ matrix.rust_target && format('--target {0}', matrix.rust_target) || '' }}
       - name: Package portable zip
         shell: pwsh
@@ -151,7 +151,7 @@ jobs:
 
   arch-x64:
     name: Arch Linux x64
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     needs: [frontend]
     container:
@@ -376,9 +376,9 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            os: macos-14
+            os: macos-15
           - arch: x64
-            os: macos-13
+            os: macos-15-intel
             rust_target: x86_64-apple-darwin
     steps:
       - uses: actions/checkout@v7
@@ -405,7 +405,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ''
-          includeUpdaterJson: false
+          uploadUpdaterJson: false
           args: --bundles dmg ${{ matrix.rust_target && format('--target {0}', matrix.rust_target) || '' }}
       - uses: actions/upload-artifact@v7
         with:
@@ -419,7 +419,7 @@ jobs:
     name: Publish Release
     if: startsWith(github.ref, 'refs/tags/')
     needs: [windows, linux, arch-x64, arch-arm64, macos]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write
