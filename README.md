@@ -174,7 +174,7 @@ cd src-tauri && cargo clippy  # Clippy (后端)
 ## 🙏 致谢
 
 - 后端核心逻辑移植自 [chenhb23/lanzouyun-disk](https://github.com/chenhb23/lanzouyun-disk)
-- 前端界面参考 [AnInsomniacy/motrix-next](https://github.com/AnInsomniacy/motrix-next)
+- 前端界面参考 [AnInsomniacy/rayburst](https://github.com/AnInsomniacy/rayburst)
 - 蓝奏云接口逆向分析参考 [zaxtyson/LanZouCloud-API](https://github.com/zaxtyson/LanZouCloud-API)
 - UI 组件库 [Naive UI](https://www.naiveui.com/)
 - 桌面框架 [Tauri](https://tauri.app/)
@@ -183,7 +183,7 @@ cd src-tauri && cargo clippy  # Clippy (后端)
 本项目仅供个人学习和技术研究使用。
 - **使用限制**：禁止将本项目用于任何违法行为，请遵守蓝奏云服务条款及相关法律法规。
 - **责任声明**：你应了解相应的风险，因使用本项目产生的任何法律纠纷或损失，均由使用者自行承担。
-- **争议处理**：如版权方认为本项目侵犯其权益，请通过 Issues 联系，我们将积极配合处理。
+- **争议处理**：如版权方认为本项目侵犯其权益，请通过 Issues 联系，我将积极配合处理。
 
 ## 🌟 星标历史
-[![Stargazers over time](https://starcharts.vercel.app/Jursin/lanzou-next.svg?variant=adaptive)](https://starchart.cc/Jursin/lanzou-next)
+[![Stargazers over time](https://starcharts.vercel.app/Jursin/lanzou-next.svg?variant=adaptive)](https://starcharts.vercel.app/Jursin/lanzou-next)

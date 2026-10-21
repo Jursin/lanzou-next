@@ -533,10 +533,8 @@ pub(crate) async fn upload_chunked(
 
 /// 生成伪后缀：从安全后缀列表随机取两个拼成（如 "ct.ke"），规避蓝奏云类型限制
 fn part_suffix() -> String {
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
-    let i1 = rng.gen_range(0..SAFE_SUFFIX_LIST.len());
-    let i2 = rng.gen_range(0..SAFE_SUFFIX_LIST.len());
+    let i1 = rand::random_range(0..SAFE_SUFFIX_LIST.len());
+    let i2 = rand::random_range(0..SAFE_SUFFIX_LIST.len());
     format!("{}.{}", SAFE_SUFFIX_LIST[i1], SAFE_SUFFIX_LIST[i2])
 }
 
