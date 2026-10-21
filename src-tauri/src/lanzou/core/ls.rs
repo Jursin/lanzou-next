@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use reqwest::Method;
 
 use crate::error::AppError;
-use crate::lanzou::client::LanzouClient;
+use crate::lanzou::client::{LanzouClient, truncate};
 use crate::lanzou::core::{CrumbsInfo, LsFile, LsResult};
 
 /// 列出文件夹下的所有文件 + 目录
@@ -104,14 +104,6 @@ async fn ls_dir(client: &LanzouClient, folder_id: i64) -> Result<LsDirResult, Ap
             })
             .unwrap_or_default(),
     })
-}
-
-fn truncate(s: &str) -> String {
-    if s.len() > 200 {
-        format!("{}...", &s[..200])
-    } else {
-        s.to_string()
-    }
 }
 
 #[derive(Debug, serde::Deserialize)]

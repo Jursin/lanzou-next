@@ -297,9 +297,7 @@ impl LanzouClient {
         let response = self.request(method, path, referer, form).await?;
         let status = response.status();
         let body = response.text().await?;
-        if !status.is_success() {
-            return Err(AppError::Lanzou(format!("HTTP {}: {}", status, body)));
-        }
+        ensure_success(status, &body)?;
         // 蓝奏云接口 content-type 为 text/json
         let wrapper: LanzouResponse<T> = serde_json::from_str(&body).map_err(|e| {
             AppError::Lanzou(format!("非标准 JSON 响应: {} ({})", e, truncate(&body)))
@@ -334,9 +332,7 @@ impl LanzouClient {
         let response = self.request(method, path, referer, form).await?;
         let status = response.status();
         let body = response.text().await?;
-        if !status.is_success() {
-            return Err(AppError::Lanzou(format!("HTTP {}: {}", status, body)));
-        }
+        ensure_success(status, &body)?;
         let wrapper: LanzouResponse<serde_json::Value> =
             serde_json::from_str(&body).map_err(|e| {
                 AppError::Lanzou(format!("非标准 JSON 响应: {} ({})", e, truncate(&body)))
@@ -371,9 +367,7 @@ impl LanzouClient {
         let response = self.request(method, path, referer, form).await?;
         let status = response.status();
         let body = response.text().await?;
-        if !status.is_success() {
-            return Err(AppError::Lanzou(format!("HTTP {}: {}", status, body)));
-        }
+        ensure_success(status, &body)?;
         let wrapper: LanzouResponse<serde_json::Value> =
             serde_json::from_str(&body).map_err(|e| {
                 AppError::Lanzou(format!("非标准 JSON 响应: {} ({})", e, truncate(&body)))
@@ -396,9 +390,20 @@ impl LanzouClient {
     }
 }
 
-fn truncate(s: &str) -> String {
-    if s.len() > 200 {
-        format!("{}...", &s[..200])
+/// 校验接口响应状态：401/403 视为登录失效
+fn ensure_success(status: reqwest::StatusCode, body: &str) -> Result<(), AppError> {
+    if matches!(status.as_u16(), 401 | 403) {
+        return Err(AppError::NotLoggedIn);
+    }
+    if !status.is_success() {
+        return Err(AppError::Lanzou(format!("HTTP {}: {}", status, body)));
+    }
+    Ok(())
+}
+
+pub(crate) fn truncate(s: &str) -> String {
+    if s.chars().count() > 200 {
+        format!("{}...", s.chars().take(200).collect::<String>())
     } else {
         s.to_string()
     }

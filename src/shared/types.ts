@@ -107,7 +107,6 @@ export interface OpResult {
 
 /** 文件描述 */
 export interface FileDesc {
-  name?: string
   desc?: string
 }
 

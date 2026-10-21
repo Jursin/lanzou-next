@@ -7,7 +7,8 @@ use tauri::{AppHandle, Emitter, Manager};
 use crate::commands::config;
 use crate::commands::lanzou::Cookie;
 use crate::error::AppError;
-use crate::lanzou::client::DEFAULT_USER_AGENT;
+use crate::lanzou::client::{DEFAULT_USER_AGENT, truncate};
+use crate::lanzou::core::share::resolve_url;
 use crate::lanzou::matcher;
 use crate::state::AppState;
 
@@ -23,7 +24,7 @@ pub async fn lanzou_login(
     username: String,
     password: String,
 ) -> Result<crate::commands::lanzou::Profile, AppError> {
-    log::info!("lanzou_login: 用户 {username} 开始登录");
+    log::info!("lanzou_login: 开始登录");
     // 使用独立 client 完成登录流程，避免污染共享 client
     // 禁用自动重定向，手动跟进以收集每一步 Set-Cookie
     let client = Client::builder()
@@ -81,11 +82,7 @@ pub async fn lanzou_login(
         match session.get(&url).await {
             Ok((body, location)) => {
                 if let Some(loc) = location {
-                    next = Some(if loc.starts_with("http") {
-                        loc
-                    } else {
-                        resolve_url(&url, &loc)
-                    });
+                    next = Some(resolve_url(&url, &loc));
                 } else {
                     collect_js_redirects(&body, &mut next);
                 }
@@ -293,14 +290,6 @@ impl LoginSession<'_> {
     }
 }
 
-fn truncate(s: &str) -> String {
-    if s.len() > 200 {
-        format!("{}...", &s[..200])
-    } else {
-        s.to_string()
-    }
-}
-
 /// 从 HTML 中提取 JS 跳转（document.location / location.href / iframe）
 fn collect_js_redirects(html: &str, next: &mut Option<String>) {
     if next.is_some() {
@@ -319,22 +308,6 @@ fn collect_js_redirects(html: &str, next: &mut Option<String>) {
             *next = Some(m.as_str().to_string());
             return;
         }
-    }
-}
-
-fn resolve_url(base: &str, path: &str) -> String {
-    if path.starts_with("http") {
-        path.to_string()
-    } else {
-        let base = base.trim_end_matches('/');
-        format!(
-            "{base}{}",
-            if path.starts_with('/') {
-                path.to_string()
-            } else {
-                format!("/{path}")
-            }
-        )
     }
 }
 

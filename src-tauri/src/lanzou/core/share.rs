@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -89,8 +89,7 @@ pub async fn ls_share(
         });
     }
     // 解析错误
-    let cleaned = &html;
-    let error_msg = cleaned
+    let error_msg = html
         .lines()
         .find(|l| l.contains("该文件已删除") || l.contains("操作失败") || l.contains("页面不存在"))
         .map(String::from)
@@ -140,16 +139,16 @@ pub async fn file_download_url(
     let (final_url, html) = get_share_page(client, url).await?;
     let html = matcher::remove_notes(&html);
 
-    // 带密码的文件：passwddiv，sign 在页面 JS 里，ajaxm url 带 file 参数
+    // 带密码：sign/kdns 在页面 JS 中，ajax 地址带 file 参数
     if html.contains("id=\"passwddiv\"") || html.contains("id=\"pwdload\"") {
         let pwd = pwd.ok_or_else(|| AppError::Lanzou("需要密码".into()))?;
         let sign = matcher::match_sign(&html)?;
-        // 提取 ajaxm url（含 file 参数），如 /ajaxm.php?file=277944670
         let ajax_path = extract_ajaxm_path(&html, &final_url);
+        let kd = matcher::match_js_var_raw(&html, "kdns").unwrap_or_else(|| "1".into());
         let mut form = HashMap::from([
             ("action".into(), "downprocess".into()),
             ("sign".into(), sign),
-            ("kd".into(), "1".into()),
+            ("kd".into(), kd),
             ("p".into(), pwd.to_string()),
         ]);
         // file 参数从 url 提取
@@ -159,27 +158,35 @@ pub async fn file_download_url(
         return post_ajaxm(client, &final_url, ajax_path, form).await;
     }
 
-    // 无密码：iframe → 下载页(fn) → sign → ajaxm
-    let iframe = matcher::match_iframe(&html)?;
-    let iframe_url = resolve_url(&base_domain(&final_url), &iframe);
-    let down_html = client
-        .share_request(&iframe_url, Some(&final_url))
-        .await?
-        .text()
-        .await?;
-    let down_html = matcher::remove_notes(&down_html);
+    // 无密码：下载参数可能在同源 iframe 页，也可能直接在分享页
+    let mut down_html = html;
+    let mut down_base = final_url.clone();
+    if let Ok(iframe) = matcher::match_iframe(&down_html) {
+        down_base = resolve_url(&base_domain(&final_url), &iframe);
+        down_html = client
+            .share_request(&down_base, Some(&final_url))
+            .await?
+            .text()
+            .await?;
+        down_html = matcher::remove_notes(&down_html);
+    }
     let sign = matcher::match_sign(&down_html)?;
-    let ajax_path = extract_ajaxm_path(&down_html, &final_url);
+    let ajax_path = extract_ajaxm_path(&down_html, &down_base);
     let mut form = HashMap::from([
         ("action".into(), "downprocess".into()),
         ("sign".into(), sign),
     ]);
-    // 新版下载页(fn)带 ajaxdata → 走 websign 流程；否则回退旧格式(p/file)
-    if let Some(ws) = extract_ajaxdata(&down_html) {
-        form.insert("websignkey".into(), ws.clone());
-        form.insert("signs".into(), ws);
-        form.insert("websign".into(), "2".into());
-        form.insert("kd".into(), "1".into());
+    // 页面带 ajaxdata 时走新版 websign 协议
+    if let Some(key) = extract_ajaxdata(&down_html) {
+        let signs = matcher::match_js_var(&down_html, "signs").unwrap_or_else(|| key.clone());
+        let websign = matcher::match_js_var(&down_html, "websign")
+            .filter(|v| !v.is_empty())
+            .unwrap_or_else(|| "2".into());
+        let kd = matcher::match_js_var_raw(&down_html, "kdns").unwrap_or_else(|| "1".into());
+        form.insert("websignkey".into(), key);
+        form.insert("signs".into(), signs);
+        form.insert("websign".into(), websign);
+        form.insert("kd".into(), kd);
         form.insert("ves".into(), "1".into());
     } else {
         // 文件夹内文件：页面无 passwddiv 但下载可能需要文件夹密码
@@ -199,30 +206,47 @@ fn extract_ajaxdata(html: &str) -> Option<String> {
         .map(|m| m.as_str().to_string())
 }
 
-/// 从页面 JS 提取 ajax 下载接口路径（含 file 参数），如 /ajaxfile.php?file=277944670
-/// 蓝奏云接口经历过 ajaxm.php -> ajaxfile.php 变更，两者都兼容匹配
+/// 从页面 JS 提取 ajax 下载接口（含 file 参数）
 fn extract_ajaxm_path(html: &str, fallback_base: &str) -> String {
-    let re = regex::Regex::new(r#"url\s*:\s*'/(?:ajaxm|ajaxfile)\.php\?file=\d+'"#).ok();
-    if let Some(re) = re
-        && let Some(m) = re.captures(html).and_then(|c| c.get(0))
+    // 绝对地址；分享页旧版为同源相对路径，不能只匹配 url : '/...'
+    let abs_re =
+        regex::Regex::new(r#"'((?:https?:)?//[^'\s]*(?:ajaxm|ajaxfile)\.php\?file=\d+)'"#).ok();
+    if let Some(re) = abs_re
+        && let Some(m) = re.captures(html).and_then(|c| c.get(1))
     {
-        let v = m.as_str().to_string();
-        // 取单引号内的路径部分
-        let path = v
-            .trim_start_matches("url")
-            .trim()
-            .trim_start_matches(':')
-            .trim();
-        return path.trim_matches('\'').to_string();
+        let v = m.as_str();
+        return if v.starts_with("//") {
+            format!("https:{v}")
+        } else {
+            v.to_string()
+        };
+    }
+    // 同源相对路径：url : '/ajaxm.php?file='
+    let re = regex::Regex::new(r#"url\s*:\s*'(/(?:ajaxm|ajaxfile)\.php\?file=\d+)'"#).ok();
+    if let Some(re) = re
+        && let Some(m) = re.captures(html).and_then(|c| c.get(1))
+    {
+        return m.as_str().to_string();
+    }
+    // 新版页面用 domain1/domain2 变量给出完整接口地址
+    for name in ["domain1", "domain2"] {
+        if let Some(v) = matcher::match_js_var(html, name)
+            && v.contains("/ajax")
+        {
+            return v;
+        }
     }
     // fallback：域名根下的 ajaxfile.php（不能拼在分享文件路径段下）
+    let file = extract_file_param(html)
+        .map(|f| format!("?file={f}"))
+        .unwrap_or_default();
     format!(
-        "{}/ajaxfile.php",
+        "{}/ajaxfile.php{file}",
         base_domain(fallback_base).trim_end_matches('/')
     )
 }
 
-/// 从 ajaxm path 提取 file 参数
+/// 从 ajax 地址提取 file 参数
 fn extract_file_param(path: &str) -> Option<String> {
     let re = regex::Regex::new(r"file=(\d+)").ok()?;
     re.captures(path)
@@ -230,7 +254,7 @@ fn extract_file_param(path: &str) -> Option<String> {
         .map(|m| m.as_str().to_string())
 }
 
-/// POST ajaxm.php 获取直链
+/// POST 下载接口（ajaxm/ajaxfile）获取直链
 async fn post_ajaxm(
     client: &LanzouClient,
     referer: &str,
@@ -254,15 +278,134 @@ async fn post_ajaxm(
         let msg = value["info"].as_str().unwrap_or("解析直链失败");
         return Err(AppError::Lanzou(msg.to_string()));
     }
+    // 下载节点还会下发反爬校验页/「验证并下载」确认页，需解开才是文件地址
+    let final_url = resolve_download_node(client, &format!("{dom}/file/{url}"), referer).await?;
     Ok(DownloadUrl {
         name,
-        url: format!("{dom}/file/{url}"),
+        url: final_url,
     })
 }
 
+/// 下载节点先返回 acw 校验页、再返回「验证并下载」确认页，逐级解开后得到文件地址
+async fn resolve_download_node(
+    client: &LanzouClient,
+    jump_url: &str,
+    referer: &str,
+) -> Result<String, AppError> {
+    // 下载节点要求携带 down_ip=1
+    client.set_cookie("down_ip", "1");
+    let mut url = jump_url.to_string();
+    let mut challenged: HashSet<String> = HashSet::new();
+    let mut confirmed: HashSet<String> = HashSet::new();
+    for _ in 0..8 {
+        // Range GET 探测：文件会返回二进制，校验页/确认页返回 text/html
+        let probe = client
+            .share_request_builder(&url, Some(referer))?
+            .header(reqwest::header::RANGE, "bytes=0-0")
+            .header(reqwest::header::ACCEPT_ENCODING, "identity")
+            .send()
+            .await?;
+        let status = probe.status();
+        // 跟随重定向后的地址
+        let current = probe.url().to_string();
+        let content_type = probe
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_string();
+        if matches!(status.as_u16(), 403 | 404 | 410) {
+            return Err(AppError::Lanzou("下载直链已失效".into()));
+        }
+        if status.is_success() && !content_type.contains("text/html") {
+            // 丢弃探测用的 1 字节，保持连接可复用
+            if status == reqwest::StatusCode::PARTIAL_CONTENT {
+                let _ = probe.bytes().await;
+            }
+            return Ok(current);
+        }
+        drop(probe);
+        let body = client
+            .share_request(&current, Some(referer))
+            .await?
+            .text()
+            .await?;
+        let host = base_domain(&current);
+        if let Some(cookie) = matcher::calc_acw_sc_v2(&body) {
+            if !challenged.insert(host) {
+                return Err(AppError::Lanzou("下载节点校验失败".into()));
+            }
+            client.set_cookie("acw_sc__v2", &cookie);
+            url = current;
+            continue;
+        }
+        if body.contains("验证并下载") {
+            if !confirmed.insert(host) {
+                return Err(AppError::Lanzou("下载节点需要人工验证".into()));
+            }
+            url = submit_download_verify(client, &current, &body).await?;
+            continue;
+        }
+        return Err(AppError::Lanzou("下载节点返回未知页面".into()));
+    }
+    Err(AppError::Lanzou("下载节点解析失败".into()))
+}
+
+/// 提交「验证并下载」确认页，返回新的直链
+async fn submit_download_verify(
+    client: &LanzouClient,
+    page_url: &str,
+    html: &str,
+) -> Result<String, AppError> {
+    let (file, sign) = match_verify_params(html)
+        .ok_or_else(|| AppError::Lanzou("下载验证页缺少参数".into()))?;
+    // 服务端要求页面加载约 2 秒后才接受提交，过早提交返回 ?SignError
+    tokio::time::sleep(std::time::Duration::from_millis(2000)).await;
+    let ajax_url = format!("{}/ajax.php", base_domain(page_url));
+    let value = client
+        .share_post_json(
+            &ajax_url,
+            Some(page_url),
+            HashMap::from([
+                ("file".into(), file),
+                ("el".into(), "2".into()),
+                ("sign".into(), sign),
+            ]),
+        )
+        .await?;
+    let url = value["url"].as_str().unwrap_or_default();
+    if !url.starts_with("http") {
+        return Err(AppError::Lanzou("下载验证失败，请稍后重试".into()));
+    }
+    Ok(url.to_string())
+}
+
+/// 验证页 ajax data 中的 file 与 sign，形如 data : { 'file':'...','el':el,'sign':'...' }
+fn match_verify_params(html: &str) -> Option<(String, String)> {
+    let block_re = regex::Regex::new(r"data\s*:\s*\{([^{}]*)\}").ok()?;
+    block_re.captures_iter(html).find_map(|c| {
+        let block = c.get(1)?.as_str();
+        Some((match_data_key(block, "file")?, match_data_key(block, "sign")?))
+    })
+}
+
+/// 读取 data 块中的字符串参数
+fn match_data_key(block: &str, key: &str) -> Option<String> {
+    let re = regex::Regex::new(&format!(
+        r#"['"]?{}['"]?\s*:\s*['"]([^'"]+)['"]"#,
+        regex::escape(key)
+    ))
+    .ok()?;
+    re.captures(block)
+        .and_then(|c| c.get(1))
+        .map(|m| m.as_str().to_string())
+}
+
 /// 解析相对路径为绝对 URL
-fn resolve_url(base: &str, path: &str) -> String {
-    if path.starts_with("http") {
+pub(crate) fn resolve_url(base: &str, path: &str) -> String {
+    if path.starts_with("//") {
+        format!("https:{path}")
+    } else if path.starts_with("http") {
         path.to_string()
     } else {
         let base = base.trim_end_matches('/');
@@ -352,8 +495,7 @@ pub async fn ls_share_folder(
                 let text = value["text"].as_array().cloned().unwrap_or_default();
                 let page_has_more = text.len() >= 50;
                 for f in text {
-                    // id 是相对分享链接（如 iPhPB3kgag9a?webpage=...），需按域名根解析为完整 URL；
-                    // 不能基于文件夹页 URL 拼接（会带上文件夹路径段，导致访问不到文件页）
+                    // id 是相对分享链接，需按域名根解析（不能拼上文件夹路径段）
                     let rel = f["id"].as_str().unwrap_or("").to_string();
                     list.push(ShareFile {
                         name: f["name_all"].as_str().unwrap_or("").to_string(),

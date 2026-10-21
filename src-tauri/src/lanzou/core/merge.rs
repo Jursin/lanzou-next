@@ -304,9 +304,8 @@ async fn probe_size(client: &LanzouClient, url: &str, referer: &str) -> Result<u
     Ok(response.content_length().unwrap_or(0))
 }
 
-/// 流式下载单个分片到指定路径，实时上报累计进度，返回下载字节数。
-/// total_size 为预检的合并后总大小（0 表示未知，退回增量模式）。
-/// 校验与 Content-Length 一致，不一致视为下载不完整（由外层重试）
+/// 流式下载单个分片并实时上报累计进度，返回下载字节数
+/// total_size 为合并后总大小（0 表示未知），与 Content-Length 不一致视为不完整
 #[allow(clippy::too_many_arguments)]
 async fn download_to_file(
     app: &AppHandle,

@@ -1,7 +1,6 @@
 use crate::error::AppError;
 
 /// 蓝奏云反爬 JS 挑战：计算 acw_sc__v2 cookie 值
-/// 参考 https://github.com/zaxtyson/LanZouCloud-API
 pub fn calc_acw_sc_v2(html: &str) -> Option<String> {
     let arg1 = regex_arg1(html)?;
     Some(hex_xor(
@@ -70,12 +69,11 @@ pub fn match_iframe(html: &str) -> Result<String, AppError> {
 /// 提取下载页 JS 中的 sign 参数
 /// 形如: 'sign':'actual_value'  或  'sign':variable,
 pub fn match_sign(html: &str) -> Result<String, AppError> {
-    // 先移除 /* */ 块注释，避免匹配到被注释掉的旧 ajax 参数
+    // 移除块注释，避免匹配到已注释的旧参数
     let re_comment =
         regex::Regex::new(r"/\*[\s\S]*?\*/").map_err(|e| AppError::Parse(e.to_string()))?;
     let clean = re_comment.replace_all(html, "");
 
-    // 优先匹配带引号的直接值
     let quoted_re =
         regex::Regex::new(r"'sign'\s*:\s*'([^']+)'").map_err(|e| AppError::Parse(e.to_string()))?;
     if let Some(m) = quoted_re.captures(&clean).and_then(|c| c.get(1)) {
@@ -84,21 +82,44 @@ pub fn match_sign(html: &str) -> Result<String, AppError> {
 
     let sign_re = regex::Regex::new(r"'sign'\s*:\s*([0-9a-zA-Z_]+)")
         .map_err(|e| AppError::Parse(e.to_string()))?;
-    let cap = sign_re
-        .captures(&clean)
+    if let Some(m) = sign_re.captures(&clean).and_then(|c| c.get(1)) {
+        let cap = m.as_str().to_string();
+        // sign 是变量引用时解析其值
+        if cap.len() < 20
+            && let Some(v) = match_js_var(&clean, &cap)
+        {
+            return Ok(v);
+        }
+        return Ok(cap);
+    }
+
+    // 新版下载页使用 wp_sign 变量
+    if let Some(v) = match_js_var(&clean, "wp_sign") {
+        return Ok(v);
+    }
+    Err(AppError::Parse("未找到 sign".into()))
+}
+
+/// 提取 JS 字符串变量值（如 var kdns = '1'），允许 var/let/const 前缀
+pub fn match_js_var(html: &str, name: &str) -> Option<String> {
+    let re = regex::Regex::new(&format!(
+        r#"(?:(?:var|let|const)\s+)?\b{name}\s*=\s*['"]([^'"]+)['"]"#
+    ))
+    .ok()?;
+    re.captures(html)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_string())
-        .ok_or_else(|| AppError::Parse("未找到 sign".into()))?;
+}
 
-    // sign 是变量引用，需解析其值
-    if cap.len() < 20 {
-        let var_re = regex::Regex::new(&format!(r"var\s+{}\s*=\s*'([^']+)'", regex::escape(&cap)))
-            .map_err(|e| AppError::Parse(e.to_string()))?;
-        if let Some(m) = var_re.captures(&clean).and_then(|c| c.get(1)) {
-            return Ok(m.as_str().to_string());
-        }
-    }
-    Ok(cap)
+/// 提取 JS 变量值（不带引号的字面量，如 var kdns = 1;）
+pub fn match_js_var_raw(html: &str, name: &str) -> Option<String> {
+    let re = regex::Regex::new(&format!(
+        r#"(?:(?:var|let|const)\s+)?\b{name}\s*=\s*([0-9A-Za-z_.]+)\s*[;,\n]"#
+    ))
+    .ok()?;
+    re.captures(html)
+        .and_then(|c| c.get(1))
+        .map(|m| m.as_str().to_string())
 }
 
 /// 提取分享文件夹页参数（filemoreajax.php）
@@ -181,22 +202,35 @@ mod tests {
 
     #[test]
     fn test_match_sign_direct() {
-        let html = r#"$.ajax({url:'/ajaxm.php', data:{'sign':'AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c'}})"#;
+        let html = r#"$.ajax({url:'/ajaxm.php', data:{'sign':'SYNTHETIC_SIGN_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_c_c'}})"#;
         let sign = match_sign(html).expect("should find sign");
         assert_eq!(
             sign,
-            "AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c"
+            "SYNTHETIC_SIGN_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_c_c"
         );
     }
 
     #[test]
     fn test_match_sign_variable() {
-        let html = r#"data:{'sign':sign}, var sign='AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c';"#;
+        let html = r#"data:{'sign':sign}, var sign='SYNTHETIC_SIGN_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_c_c';"#;
         let sign = match_sign(html).expect("should resolve variable sign");
         assert_eq!(
             sign,
-            "AGZRbwEwU2IEDQU6BDRUaFc8DzxfMlRjCjTPlVkWzFSYFY7ATpWYw_c_c"
+            "SYNTHETIC_SIGN_0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_c_c"
         );
+    }
+
+    #[test]
+    fn test_match_js_var_raw() {
+        let html = "var kdns =1;";
+        assert_eq!(match_js_var_raw(html, "kdns").as_deref(), Some("1"));
+    }
+
+    #[test]
+    fn test_match_js_var_skips_empty() {
+        // 页面先声明空值，再声明真实值
+        let html = "var isngis = '';\nvar isngis = 'SYNTHETIC_SIGN';";
+        assert_eq!(match_js_var(html, "isngis").as_deref(), Some("SYNTHETIC_SIGN"));
     }
 
     #[test]

@@ -89,9 +89,7 @@ pub async fn lanzou_download_by_id(
     download_url(&app, &state, &client, &task).await
 }
 
-/// 实际下载流程（dir 为空时使用系统下载目录）
-/// 外层重试：响应体读取/解码偶发失败（如 CDN 中断、压缩解码失败）时，
-/// 基于已写入的 .download 临时文件断点续传重试，避免一次抖动就整个失败
+/// 实际下载流程（dir 为空时用系统下载目录）；瞬时错误基于 .download 断点续传重试
 pub async fn download_url(
     app: &AppHandle,
     state: &crate::state::AppState,

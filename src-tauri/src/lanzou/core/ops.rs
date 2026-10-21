@@ -162,11 +162,7 @@ struct MoveNode {
     children: Vec<MoveNode>,
 }
 
-/// 移动文件与文件夹。
-/// 蓝奏云网页端只支持移动单个文件（task=20），不支持直接移动文件夹；
-/// 文件夹采用"模拟移动"：在目标下重建同名文件夹 → 递归移动子内容 → 删除原文件夹
-/// 蓝奏云无原子移动：先移内容后删源，中途失败/中断会留下部分移动的中间状态，
-/// 失败时错误信息会附带"部分内容可能已移动"提示（moved 计数）。
+/// 移动文件与文件夹
 pub async fn move_items(
     client: &LanzouClient,
     items: Vec<MoveTarget>,
@@ -342,8 +338,6 @@ pub async fn set_folder_access(
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileDesc {
-    /// 文件名
-    pub name: Option<String>,
     /// 描述
     pub desc: Option<String>,
 }
@@ -353,11 +347,11 @@ pub async fn file_description(client: &LanzouClient, file_id: &str) -> Result<Fi
         ("task".into(), "12".into()),
         ("file_id".into(), file_id.to_string()),
     ]);
-    let res: serde_json::Value = client
+    // task=12 的 info 为描述文本
+    let res = client
         .json_info(Method::POST, "doupload.php", None, Some(form))
         .await?;
     Ok(FileDesc {
-        name: res["text"].as_str().map(String::from),
         desc: res.as_str().map(String::from),
     })
 }
@@ -413,8 +407,7 @@ pub async fn file_detail(client: &LanzouClient, file_id: &str) -> Result<ShareDe
         url: info["is_newd"]
             .as_str()
             .zip(info["f_id"].as_str())
-            .map(|(a, b)| format!("{a}/{b}"))
-            .or_else(|| info["new_url"].as_str().map(String::from)),
+            .map(|(a, b)| format!("{a}/{b}")),
         name: None,
     })
 }

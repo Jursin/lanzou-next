@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter};
 
 use crate::error::AppError;
-use crate::lanzou::client::LanzouClient;
+use crate::lanzou::client::{LanzouClient, truncate};
 use crate::lanzou::core::ops::mkdir;
 
 /// 上传任务
@@ -540,7 +540,7 @@ fn part_suffix() -> String {
     format!("{}.{}", SAFE_SUFFIX_LIST[i1], SAFE_SUFFIX_LIST[i2])
 }
 
-/// 蓝奏云允许上传的安全伪后缀（来自参考项目配置）
+/// 蓝奏云允许上传的伪后缀
 const SAFE_SUFFIX_LIST: &[&str] = &[
     "ct",
     "ke",
@@ -576,14 +576,6 @@ const SAFE_SUFFIX_LIST: &[&str] = &[
     "pkg",
     "cfg",
 ];
-
-fn truncate(s: &str) -> String {
-    if s.len() > 200 {
-        format!("{}...", &s[..200])
-    } else {
-        s.to_string()
-    }
-}
 
 /// 超限文件信息（上传预检结果项）
 #[derive(Debug, Clone, Serialize)]
