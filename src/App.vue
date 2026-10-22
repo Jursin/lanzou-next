@@ -18,8 +18,16 @@ function onContextMenu(e: MouseEvent) {
   }
 }
 
-/** 开发者工具关闭时抑制 F12 等调出开发者工具 */
+// 全局快捷键
 function onKeyDown(e: KeyboardEvent) {
+  // Esc 退出输入状态（搜索框、设置项、弹窗输入等）
+  if ((e.key === 'Escape' || e.key === 'Esc') && !e.isComposing) {
+    const target = e.target
+    if (target instanceof HTMLElement && (target.matches('input, textarea') || target.isContentEditable)) {
+      target.blur()
+    }
+  }
+  // 开发者工具关闭时抑制 F12
   if (preferenceStore.config.devTools) return
   const isF12 = e.key === 'F12'
   const isCtrlShift = e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())
