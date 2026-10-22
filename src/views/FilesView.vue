@@ -123,10 +123,18 @@ function onSearchInput(value: string) {
   }, 150)
 }
 
-function clearSearch() {
+function resetSearch() {
+  if (searchDebounceTimer.value) {
+    clearTimeout(searchDebounceTimer.value)
+    searchDebounceTimer.value = null
+  }
   searchQuery.value = ''
   page.value = 1
   recyclePage.value = 1
+}
+
+function clearSearch() {
+  resetSearch()
 }
 
 // 回收站状态
@@ -538,12 +546,16 @@ function refresh() {
 
 async function enterFolder(file: LsFile) {
   if (file.type !== 'folder') return
+  resetSearch()
   await loadFiles(Number(file.id))
 }
 
 function goCrumbs(idx: number) {
   const target = filesStore.crumbs[idx]
-  if (target) loadFiles(Number(target.id))
+  if (target) {
+    resetSearch()
+    loadFiles(Number(target.id))
+  }
 }
 
 function toggleSelect(file: LsFile) {
@@ -574,6 +586,7 @@ function onCheckClick(file: LsFile, event: MouseEvent) {
 
 // 回收站操作
 async function toggleRecycle() {
+  resetSearch()
   recycleMode.value = !recycleMode.value
   recycleSelected.value = []
   if (recycleMode.value) {
@@ -695,12 +708,14 @@ async function onRecycleContextSelect(key: string) {
 // 回收站子文件夹
 async function enterRecycleFolder(item: RecycleItem) {
   if (item.type !== 'folder') return
+  resetSearch()
   recycleFolderView.value = item
   recycleSelected.value = []
   await loadRecycleFiles(item.id)
 }
 
 function backToRecycleRoot() {
+  resetSearch()
   recycleFolderView.value = null
   recycleFiles.value = []
 }
