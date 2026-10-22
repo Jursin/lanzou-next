@@ -225,11 +225,11 @@ mod tests {
 <html><body>
 <div id="info1">
 <div class="mf"><div class="mf1">个性域名: </div><div class="mf2">
-<div id="domaindiynow">https://wwazk.lanzn.com</div>
+<div id="domaindiynow">https://example.lanzou.com</div>
 <span id="domaindiyedit"><span onclick="domainedit()" class="btn">修改</span></span>
 </div></div>
-<div class="mf"><div class="mf1">最近登录时间: </div><div class="mf2">2026-08-13 20:42:18</div></div>
-<div class="mf"><div class="mf1">手机号: </div><div class="mf2"><span id="phone_id">173****5372</span></div></div>
+<div class="mf"><div class="mf1">最近登录时间: </div><div class="mf2">2026-01-01 00:00:00</div></div>
+<div class="mf"><div class="mf1">手机号: </div><div class="mf2"><span id="phone_id">138****0000</span></div></div>
 <div class="mf"><div class="mf1">允许上传类型: </div><div class="mf2">doc,docx,zip,rar,apk,txt,exe,7z,e,z,ct,ke,cetrainer,db,tar,pdf,w3x<br>epub,mobi,azw,azw3,osk,osz,xpa,cpk,lua,jar,dmg,ppt,pptx,xls,xlsx,mp3<br>ipa,iso,img,gho,ttf,ttc,txf,dwg,bat,imazingapp,dll,crx,xapk,conf<br>deb,rp,rpm,rplib,mobileconfig,appimage,lolgezi,flac<br>cad,hwt,accdb,ce,xmind,enc,bds,bdi,ssf,it<br>pkg,cfg,mp4,avi,png,jpeg,jpg,gif,webp,brushset</div></div>
 <div class="mf"><div class="mf1">单个文件大小: </div><div class="mf2"><font color="#FF8800" size="5">
 100M
@@ -245,9 +245,9 @@ function phonesub(){ $("#phone_id").html(phonenew); w_info(msg.info); }
     fn test_parse_profile() {
         let p = parse_profile(REAL_LIKE_HTML);
         assert!(p.is_login);
-        assert_eq!(p.domain.as_deref(), Some("https://wwazk.lanzn.com"));
-        assert_eq!(p.last_login.as_deref(), Some("2026-08-13 20:42:18"));
-        assert_eq!(p.verification.as_deref(), Some("173****5372"));
+        assert_eq!(p.domain.as_deref(), Some("https://example.lanzou.com"));
+        assert_eq!(p.last_login.as_deref(), Some("2026-01-01 00:00:00"));
+        assert_eq!(p.verification.as_deref(), Some("138****0000"));
         assert_eq!(p.max_size.as_deref(), Some("100M"));
         assert!(p.support_list.contains(&"doc".to_string()));
         assert!(p.support_list.contains(&"mp4".to_string()));

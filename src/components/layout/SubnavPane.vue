@@ -84,7 +84,6 @@ defineEmits<{ navigate: [route: string] }>()
 .subnav-button {
   position: relative;
   width: 100%;
-  margin-bottom: 8px;
   padding: 8px 10px;
   font-size: 14px;
   line-height: 20px;

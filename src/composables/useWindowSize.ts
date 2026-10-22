@@ -8,7 +8,7 @@ import {
 
 const DESIRED_SIZE = { width: 1260, height: 800 }
 
-/* 修正分数缩放下窗口实际显示尺寸小于配置的问题，并在最终尺寸下居中 */
+// 修正分数缩放下窗口实际显示尺寸小于配置的问题，并在最终尺寸下居中
 export async function calibrateWindowSize() {
   if (!('__TAURI_INTERNALS__' in window)) return
   try {

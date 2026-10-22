@@ -85,7 +85,7 @@ export function useUpdateCheck() {
       if (dialogFn) dialogFn(info)
     } else if (lastUpdateInfo && dialogFn) {
       dialogFn(lastUpdateInfo)
-    } else if (!info) {
+    } else {
       message.success('已是最新版本')
     }
   }

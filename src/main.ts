@@ -23,8 +23,18 @@ const transferStore = useTransferStore()
 const trafficStore = useUploadTrafficStore()
 
 async function bootstrap() {
-  await preferenceStore.load()
-  await appStore.loadConfig()
+  try {
+    await preferenceStore.load()
+  } catch (e) {
+    console.error('load preference failed', e)
+  }
+
+  try {
+    await appStore.loadConfig()
+  } catch (e) {
+    console.error('load app config failed', e)
+  }
+
   app.mount('#app')
   trafficStore.restore()
 
@@ -33,13 +43,17 @@ async function bootstrap() {
   }
 
   if ('__TAURI_INTERNALS__' in window) {
-    await appStore.setupLoginListener()
-    await transferStore.init()
-    await transferStore.setupListeners()
-    if (appStore.isLoggedIn) {
-      await appStore.refreshProfile()
+    try {
+      await appStore.setupLoginListener()
+      await transferStore.init()
+      await transferStore.setupListeners()
+      if (appStore.isLoggedIn) {
+        await appStore.refreshProfile()
+      }
+    } catch (e) {
+      console.error('init app services failed', e)
     }
   }
 }
 
-bootstrap()
+void bootstrap()

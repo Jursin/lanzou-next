@@ -11,7 +11,6 @@ const LANZOU_URL_RE =
 
 let lastClipText = ''
 let checking = false
-let lastClipForDialog = ''
 let skipNextCheck = false
 
 // 标记下一次检测跳过（用于应用自身复制后避免重复弹窗）
@@ -32,12 +31,12 @@ async function checkClipboard(router: Router, dialog: ReturnType<typeof useDialo
     lastClipText = text
     const info = extractShareLink(text, LANZOU_URL_RE)
     if (!info) return
-    lastClipForDialog = text
+    const clipText = text
     dialog.info({
       title: '检测到分享链接',
       content: () => h('div', {
         style: 'font-size: 12px; color: var(--m3-on-surface-variant); background: var(--m3-surface-container-highest); padding: 8px; border-radius: 6px; word-break: break-all; max-height: 200px; overflow-y: auto;',
-      }, lastClipForDialog),
+      }, clipText),
       positiveText: '去解析',
       negativeText: '忽略',
       onPositiveClick: () => {
@@ -53,14 +52,25 @@ async function checkClipboard(router: Router, dialog: ReturnType<typeof useDialo
 
 export function useClipboardCheck(router: Router) {
   const dialog = useDialog()
+  let checkTimer: ReturnType<typeof setTimeout> | undefined
+
+  function scheduleCheck(delay: number) {
+    if (checkTimer) clearTimeout(checkTimer)
+    checkTimer = setTimeout(() => {
+      checkTimer = undefined
+      void checkClipboard(router, dialog)
+    }, delay)
+  }
 
   onMounted(() => {
-    setTimeout(() => void checkClipboard(router, dialog), 1000)
+    if (!('__TAURI_INTERNALS__' in window)) return
+    scheduleCheck(1000)
     const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-      if (focused) {
-        setTimeout(() => void checkClipboard(router, dialog), 300)
-      }
+      if (focused) scheduleCheck(300)
     })
-    onUnmounted(() => { unlisten.then((fn) => fn()) })
+    onUnmounted(() => {
+      if (checkTimer) clearTimeout(checkTimer)
+      void unlisten.then((fn) => fn()).catch(() => {})
+    })
   })
 }

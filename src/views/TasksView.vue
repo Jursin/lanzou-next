@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, onActivated, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue'
 
 import {
   NButton,
@@ -55,11 +55,6 @@ onUnmounted(() => {
 /** 周期刷新信号：elapsed/estimatedTotal 读取它以驱动重新渲染 */
 const ticker = ref(0)
 let tickerTimer: ReturnType<typeof setInterval> | undefined
-
-// 切回本页（keep-alive 场景）或 tab 切换时重新检测丢失
-onActivated(() => {
-  checkAllLost()
-})
 
 const uploads = computed(() => transferStore.uploads)
 const downloads = computed(() => transferStore.downloads)

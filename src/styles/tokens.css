@@ -39,8 +39,6 @@
   --panel-title: var(--m3-on-surface);
   --panel-border: var(--m3-outline-variant);
 
-  --task-item-bg: var(--m3-surface-container-lowest);
-
   --subnav-width: 210px;
   --header-top-offset: 48px;
 
@@ -80,5 +78,4 @@
 
   --subnav-bg: var(--m3-surface-container);
   --main-bg: var(--m3-surface-container-high);
-  --task-item-bg: var(--m3-surface-container);
 }

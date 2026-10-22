@@ -104,7 +104,7 @@ let sortable: Sortable | null = null
 /** 是否正在拖拽 */
 const dragActive = ref(false)
 /** 拖拽最后位置（用于落点判断） */
-const dragPos = ref({ x: 0, y: 0 })
+const dragPos = { x: 0, y: 0 }
 /** 拖拽结束后抑制随后的 click（避免拖拽落点触发进入文件夹/选中） */
 const justDragged = ref(false)
 /** 移动进行中：冻结页面，防止期间执行其他操作干扰 */
@@ -486,7 +486,8 @@ function destroySortable() {
 /** 拖拽过程中跟随鼠标：更新落点高亮 */
 function onWindowMouseMove(e: MouseEvent) {
   if (!dragActive.value) return
-  dragPos.value = { x: e.clientX, y: e.clientY }
+  dragPos.x = e.clientX
+  dragPos.y = e.clientY
   const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null
   const folderRow = el?.closest<HTMLElement>('.file-row.folder')
   dropTargetId.value = folderRow ? (folderRow.dataset.id ?? '') : ''
@@ -494,7 +495,7 @@ function onWindowMouseMove(e: MouseEvent) {
 
 /** 松手：判断鼠标落在哪个文件夹行上，执行移动 */
 function handleDropTarget() {
-  const el = document.elementFromPoint(dragPos.value.x, dragPos.value.y) as HTMLElement | null
+  const el = document.elementFromPoint(dragPos.x, dragPos.y) as HTMLElement | null
   const folderRow = el?.closest<HTMLElement>('.file-row.folder')
   const target = folderRow ? filesStore.files.find((f) => f.id === folderRow.dataset.id) : undefined
   if (target && target.type === 'folder' && !moveIds.value.some((f) => f.id === target.id)) {

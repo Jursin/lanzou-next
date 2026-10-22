@@ -30,6 +30,7 @@ export default defineConfig(async () => ({
             '@tauri-apps/api',
             '@tauri-apps/plugin-dialog',
             '@tauri-apps/plugin-opener',
+            '@tauri-apps/plugin-clipboard-manager',
           ],
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
         },
